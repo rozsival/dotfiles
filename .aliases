@@ -12,7 +12,7 @@ alias -- -="cd -"
 alias dl="cd ~/Downloads"
 alias dt="cd ~/Desktop"
 alias p="cd ~/projects"
-alias s="cs ~/projects/sites"
+alias s="cd ~/projects/sites"
 alias g="git"
 alias wv="cd ~/projects/libs/wavevision"
 
@@ -29,7 +29,7 @@ fi
 alias l="ls -lF ${colorflag}"
 
 # List all files colorized in long format, excluding . and ..
-alias la="ls -lAF ${colorflag}"
+alias ll="ls -lAF ${colorflag}"
 
 # List only directories
 alias lsd="ls -lF ${colorflag} | grep --color=never '^d'"
