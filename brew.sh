@@ -56,6 +56,8 @@ brew install git-lfs
 brew install git-flow-avh
 brew install gs
 brew install imagemagick
+brew install composer
+brew install yarn
 
 # Remove outdated versions from the cellar.
 brew cleanup
