@@ -48,3 +48,5 @@ source brew.sh
 ### Setup development environment
 
 Follow https://getgrav.org/blog/macos-catalina-apache-multiple-php-versions. Parts with `$PATH` setup can be skipped, everything is set in `.path`.
+
+Setup Yarn [`version`](https://yarnpkg.com/en/docs/cli/version) to publish `npm` packages correctly.
