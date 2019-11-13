@@ -1,4 +1,4 @@
-# Vit’s dotfiles
+# Vít’s dotfiles
 
 Mac OS X dotfiles and sensible development setup 🛠
 
