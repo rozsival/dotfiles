@@ -57,7 +57,7 @@ brew install git-flow-avh
 brew install gs
 brew install imagemagick
 brew install composer
-brew install yarn
+brew install yarn --ignore-dependencies
 
 # Remove outdated versions from the cellar.
 brew cleanup
