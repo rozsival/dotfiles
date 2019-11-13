@@ -1,6 +1,6 @@
 # Vít’s dotfiles
 
-Mac OS X dotfiles and sensible development setup 🛠
+Mac OS X dotfiles with sensible development setup :wrench:
 
 ## Installation
 
