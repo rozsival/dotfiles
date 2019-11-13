@@ -42,9 +42,9 @@ Reboot back to OS.
 
 ```bash
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-. brew.sh
+source brew.sh
 ```
 
 ### Setup development environment
 
-Follow https://getgrav.org/blog/macos-catalina-apache-multiple-php-versions
+Follow https://getgrav.org/blog/macos-catalina-apache-multiple-php-versions. Parts with `$PATH` setup can be skipped, everything is set in `.path`.
