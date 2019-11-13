@@ -30,7 +30,7 @@ source .macos
 
 ### Enable `csrutil` again
 
-Reboot in Recovery Mode and use:
+Reboot in Recovery Mode and run this in Terminal:
 
 ```bash
 csrutil enable
