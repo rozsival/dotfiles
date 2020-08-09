@@ -55,6 +55,10 @@ Follow https://getgrav.org/blog/macos-catalina-apache-multiple-php-versions. **P
 
 Install [nvm](https://github.com/nvm-sh/nvm).
 
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v<$version>/install.sh | bash
+```
+
 Install [yarn](https://yarnpkg.com).
 
 ```bash
