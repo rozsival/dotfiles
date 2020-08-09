@@ -45,8 +45,30 @@ Reboot back to OS.
 source brew.sh
 ```
 
-### Setup development environment
+## Setup development environment
 
-Follow https://getgrav.org/blog/macos-catalina-apache-multiple-php-versions. Parts with `$PATH` setup can be skipped, everything is set in `.path`.
+### PHP
+
+Follow https://getgrav.org/blog/macos-catalina-apache-multiple-php-versions. **Parts with `$PATH` setup can be skipped, everything is set in `.path`.**
+
+### Node
+
+Install [nvm](https://github.com/nvm-sh/nvm).
+
+Install [yarn](https://yarnpkg.com).
+
+```bash
+npm install -g yarn
+```
 
 Setup Yarn [`version`](https://yarnpkg.com/en/docs/cli/version#toc-git-tags) to publish `npm` packages correctly.
+
+### Others
+
+Setup _Brew-installed_ Ruby by adding following to `.bash_profile`:
+
+```
+# Ruby
+export PATH="/usr/local/opt/ruby/bin:$PATH"
+export GEM_HOME="$HOME/.gem"
+```
