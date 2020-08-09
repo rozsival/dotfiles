@@ -1,1 +1,1 @@
-export PATH="/usr/local/bin:/usr/local/sbin:~/.composer/vendor/bin:$(brew --prefix coreutils)/libexec/gnubin:/Applications/Visual Studio Code.app/Contents/Resources/app/bin:$PATH"
+export PATH="/usr/local/bin:/usr/local/sbin:~/.composer/vendor/bin:$(brew --prefix coreutils)/libexec/gnubin:/Applications/Visual Studio Code.app/Contents/Resources/app/bin:/usr/local/opt/ruby/bin:$PATH"
