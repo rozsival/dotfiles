@@ -1,6 +1,6 @@
 # Vít’s dotfiles
 
-Mac OS X dotfiles with sensible development setup.
+MacOS dotfiles with sensible web development setup.
 
 ## Installation
 
@@ -9,8 +9,6 @@ Mac OS X dotfiles with sensible development setup.
 ```bash
 cd; curl -#L https://github.com/rozsival/dotfiles/tarball/master | tar -xzv --strip-components 1 --exclude={README.md,bootstrap.sh,.osx,LICENSE-MIT.txt}
 ```
-
-Then install [Spectacle](https://www.spectacleapp.com/).
 
 ### Disable `csrutil`
 
