@@ -36,6 +36,12 @@ csrutil enable
 
 Reboot back to OS.
 
+### Install build tools
+
+```bash
+xcode-select --install
+```
+
 ### Install `brew`
 
 ```bash
