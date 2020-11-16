@@ -53,7 +53,27 @@ source brew.sh
 
 ### PHP
 
-Follow https://getgrav.org/blog/macos-catalina-apache-multiple-php-versions. **Parts with `$PATH` setup can be skipped, everything is set in `.path`.**
+Follow [this awesome manual](https://getgrav.org/blog/macos-bigsur-apache-multiple-php-versions). Parts with `$PATH` setup can be skipped, everything is set in `.path`.
+
+> ⚠️ **Apache configuration should prefer `php-fpm` over `mod_php`.**
+
+```apacheconf
+LoadModule proxy_module lib/httpd/modules/mod_proxy.so
+LoadModule proxy_fcgi_module lib/httpd/modules/mod_proxy_fcgi.so
+
+<IfModule proxy_fcgi_module>
+    # Enable http authorization headers
+    <IfModule setenvif_module>
+        SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+    </IfModule>
+    <VirtualHost *:*>
+        ProxyPassMatch "^/(.*\.php(/.*)?)$" "fcgi://127.0.0.1:9000/<$serverRoot>/$1"
+    </VirtualHost>
+    <FilesMatch \.php$>
+        SetHandler "proxy:fcgi://127.0.0.1:9000"
+    </FilesMatch>
+</IfModule>
+```
 
 ### Node
 
