@@ -84,5 +84,3 @@ Install [yarn](https://yarnpkg.com).
 ```bash
 npm install -g yarn
 ```
-
-Setup Yarn [`version`](https://yarnpkg.com/en/docs/cli/version#toc-git-tags) to publish `npm` packages correctly.
