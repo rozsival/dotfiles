@@ -62,10 +62,6 @@ LoadModule proxy_module lib/httpd/modules/mod_proxy.so
 LoadModule proxy_fcgi_module lib/httpd/modules/mod_proxy_fcgi.so
 
 <IfModule proxy_fcgi_module>
-    # Enable http authorization headers
-    <IfModule setenvif_module>
-        SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
-    </IfModule>
     <VirtualHost *:*>
         ProxyPassMatch "^/(.*\.php(/.*)?)$" "fcgi://127.0.0.1:9000/<$serverRoot>/$1"
     </VirtualHost>
