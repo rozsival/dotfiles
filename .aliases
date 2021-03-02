@@ -150,8 +150,7 @@ alias path='echo -e ${PATH//:/\\n}'
 
 # SSH aliases
 alias asterix="ssh root@asterix.wavevision.cz"
-alias flowgate="ssh flowgate@194.145.182.135"
-alias printix="ssh root@194.145.180.118"
+alias flowgate="ssh flowgate@194.145.180.7"
 alias sfsrvr="ssh root@sitefellows.net"
 alias sizeid="ssh ubuntu@sizeid.com"
 alias sizeid-dev="ssh ubuntu@dev.sizeid.com"
