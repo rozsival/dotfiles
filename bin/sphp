@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+versions=("php" "php@7.0" "php@7.4")
+
+if [ -z "$1" ]
+    then
+        echo "❌ PHP version argument required."
+        exit 1
+fi
+
+printf "🔄 Switching PHP to version $1\n\n"
+
+for v in ${versions[*]}
+    do
+        status=$(brew services | grep $v | grep "stopped")
+        if [ -z "$status" ]
+            then
+                brew services stop "$v"
+        fi
+        brew unlink "$v"
+done
+
+brew link --overwrite --force "php@$1"
+brew services start "php@$1"
+
+printf "\n✅ PHP switched to version $1"
+exit 0
