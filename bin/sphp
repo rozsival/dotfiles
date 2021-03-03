@@ -1,26 +1,41 @@
 #!/usr/bin/env bash
-versions=("php" "php@7.0" "php@7.4")
+latest="8.0"
+versions=("7.0" "7.4" "$latest")
+valid=$(printf "|%s" "${versions[@]}")
+switch="$1"
 
-if [ -z "$1" ]
+ERROR=$(tput setaf 1)
+SUCCESS=$(tput setaf 2)
+
+if [ -z "$switch" ]
     then
-        echo "❌ PHP version argument required."
+        echo "${ERROR}✖ PHP version required (${valid:1})"
         exit 1
 fi
 
-printf "🔄 Switching PHP to version $1\n\n"
+if [[ ! " ${versions[@]} " =~ " ${switch} " ]]
+    then
+        printf "${ERROR}✖ Invalid PHP version (valid: ${valid:1})"
+        exit 1
+fi
+
+printf "⇆ Switching PHP to version $switch\n\n"
+
+php="php@$switch"
+if [ "$switch" == "$latest" ] ; then php="php" ; fi
 
 for v in ${versions[*]}
-    do
-        status=$(brew services | grep $v | grep "stopped")
-        if [ -z "$status" ]
-            then
-                brew services stop "$v"
-        fi
-        brew unlink "$v"
+    do    
+        service="php@$v"
+        pattern="$service"
+        if [ "$v" == "$latest" ] ; then pattern="php[^@]" ; fi
+        status=$(brew services | grep "$pattern" | grep "started")
+        if [ ! -z "$status" ] ; then brew services stop "$service" ; fi
+        brew unlink "$service"
 done
 
-brew link --overwrite --force "php@$1"
-brew services start "php@$1"
+brew link --overwrite --force "$php"
+brew services start "$php"
 
-printf "\n✅ PHP switched to version $1"
+printf "\n${SUCCESS}✔ PHP switched to version $switch"
 exit 0
