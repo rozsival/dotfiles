@@ -12,9 +12,7 @@ alias -- -="cd -"
 alias dl="cd ~/Downloads"
 alias dt="cd ~/Desktop"
 alias p="cd ~/projects"
-alias s="cd ~/projects/sites"
 alias g="git"
-alias wv="cd ~/projects/libs/wavevision"
 
 # Detect which `ls` flavor is in use
 if ls --color > /dev/null 2>&1; then # GNU `ls`
@@ -147,12 +145,3 @@ alias reload="exec ${SHELL} -l"
 
 # Print each PATH entry on a separate line
 alias path='echo -e ${PATH//:/\\n}'
-
-# SSH aliases
-alias asterix="ssh root@asterix.wavevision.cz"
-alias flowgate="ssh flowgate@194.145.180.7"
-alias sfsrvr="ssh root@sitefellows.net"
-alias sizeid="ssh ubuntu@sizeid.com"
-alias sizeid-dev="ssh ubuntu@dev.sizeid.com"
-alias sizeid-feature="ssh ubuntu@feature.sizeid.com"
-alias idefix="ssh root@idefix.wavevision.cz"
