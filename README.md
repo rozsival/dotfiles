@@ -51,6 +51,12 @@ source brew.sh
 
 ## Setup development environment
 
+### Node.js
+
+```bash
+source node.sh
+```
+
 ### PHP
 
 Follow [this awesome manual](https://getgrav.org/blog/macos-bigsur-apache-multiple-php-versions). Parts with `$PATH` setup can be skipped, everything is set in `.path`.
@@ -69,18 +75,4 @@ LoadModule proxy_fcgi_module lib/httpd/modules/mod_proxy_fcgi.so
         SetHandler "proxy:fcgi://127.0.0.1:9000"
     </FilesMatch>
 </IfModule>
-```
-
-### Node
-
-Install [nvm](https://github.com/nvm-sh/nvm).
-
-```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v<$version>/install.sh | bash
-```
-
-Install [yarn](https://yarnpkg.com).
-
-```bash
-npm install -g yarn
 ```
