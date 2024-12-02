@@ -1,1 +1,1 @@
-export PATH="/usr/local/bin:/usr/local/sbin:~/.composer/vendor/bin:$(brew --prefix coreutils)/libexec/gnubin:/usr/local/opt/ruby/bin:$PATH"
+export PATH="/usr/local/bin:/usr/local/sbin:$(brew --prefix coreutils)/libexec/gnubin:/usr/local/opt/ruby/bin:$(brew --prefix openjdk)/bin:$(brew --prefix gnu-sed)/libexec/gnubin:~/.vcpkg-clion/vcpkg:$(brew --prefix llvm)/bin:$PATH"
