@@ -70,6 +70,7 @@ brew install gs
 brew install imagemagick
 brew install composer
 brew install shellcheck
+brew install openjdk
 
 # Remove outdated versions from the cellar.
 brew cleanup
