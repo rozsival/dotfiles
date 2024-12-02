@@ -50,13 +50,26 @@ brew install sfnt2woff
 brew install sfnt2woff-zopfli
 brew install woff2
 
+# Install build tools.
+brew install libtool
+brew install cmake
+brew install ccache
+brew install automake
+brew install autoconf
+brew install autoconf-archive
+brew install autoreconf
+brew install gettext
+brew install llvm
+brew install pkg-config
+
 # Install other useful binaries.
+brew install bat
 brew install git
 brew install git-lfs
-brew install git-flow-avh
 brew install gs
 brew install imagemagick
 brew install composer
+brew install shellcheck
 
 # Remove outdated versions from the cellar.
 brew cleanup
