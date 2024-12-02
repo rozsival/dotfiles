@@ -8,5 +8,5 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -
 mv -f ~/.bashrc.bak ~/.bashrc
 source ~/.bashrc
 
-# Install node.js v18
-pnpm env use --global 18
+# Install node.js LTS
+pnpm env use --global lts
