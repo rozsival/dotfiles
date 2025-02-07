@@ -43,5 +43,5 @@ export GEM_HOME="$HOME/.gem"
 export VCPKG_ROOT="$HOME/.vcpkg-clion/vcpkg"
 
 # LLVM
-export CC=$(brew --prefix llvm)/bin/clang
-export CXX=$(brew --prefix llvm)/bin/clang++
+export CC="$(brew --prefix llvm)/bin/clang"
+export CXX="$(brew --prefix llvm)/bin/clang++"
