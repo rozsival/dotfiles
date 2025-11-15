@@ -9,6 +9,9 @@ for file in ~/.{path,bash_prompt,exports,aliases,functions,extra}; do
 done;
 unset file;
 
+# Initialize Homebrew
+eval "$(/opt/homebrew/bin/brew shellenv)";
+
 # Load completion
 for file in ~/.bash_completion/*; do
 	[ -r "$file" ] && [ -f "$file" ] && source "$file";
@@ -43,7 +46,7 @@ then
       [[ -r "${COMPLETION}" ]] && source "${COMPLETION}"
     done
   fi
-fi
+fi;
 
 # Enable tab completion for `g` by marking it as an alias for `git`
 if type _git &> /dev/null; then
