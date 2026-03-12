@@ -13,7 +13,7 @@ unset file;
 eval "$(/opt/homebrew/bin/brew shellenv)";
 
 # Load completion
-for file in ~/.bash_completion/*; do
+for file in ~/.bash_completions/*; do
 	[ -r "$file" ] && [ -f "$file" ] && source "$file";
 done;
 
