@@ -6,3 +6,6 @@ source ~/.bash_profile
 
 # Install node.js LTS
 nvm install --lts
+
+# Install corepack
+npm install -g corepack@latest
