@@ -45,3 +45,6 @@ export VCPKG_ROOT="$HOME/.vcpkg-clion/vcpkg"
 # LLVM
 export CC="$(brew --prefix llvm)/bin/clang"
 export CXX="$(brew --prefix llvm)/bin/clang++"
+
+# Bash profile
+export PROFILE="$HOME/.bash_profile"
