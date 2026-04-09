@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 
-# Backup .bash_rc as pnpm installation modifies it
-cp ~/.bashrc ~/.bashrc.bak
-
-# Install pnpm
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-mv -f ~/.bashrc.bak ~/.bashrc
-source ~/.bashrc
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+source ~/.bash_profile
 
 # Install node.js LTS
-pnpm env use --global lts
+nvm install --lts
