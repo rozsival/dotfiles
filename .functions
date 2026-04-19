@@ -173,7 +173,7 @@ function tre() {
 # Panther Minor
 panther-minor-sleep() {
 	echo "WARNING: You are about to suspend the server."
-	echo "If you are outside the local network (LAN), you will NOT be able to wake it up remotely via Wake-on-LAN."
+	echo "If you are outside the LAN, you will NOT be able to wake it up remotely via Wake-on-LAN."
 	printf "Do you want to proceed? (y/n): "
 	read confirm
 	
