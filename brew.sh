@@ -72,5 +72,9 @@ brew install composer
 brew install shellcheck
 brew install openjdk
 
+# Install nano with better syntax highlighting
+brew install nano
+curl https://raw.githubusercontent.com/galenguyer/nano-syntax-highlighting/master/install.sh | bash
+
 # Remove outdated versions from the cellar.
 brew cleanup
