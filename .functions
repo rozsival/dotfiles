@@ -169,18 +169,3 @@ function o() {
 function tre() {
 	tree -aC -I '.git|node_modules|bower_components' --dirsfirst "$@" | less -FRNX;
 }
-
-# Panther Minor
-panther-minor-sleep() {
-	echo "WARNING: You are about to suspend the server."
-	echo "If you are outside the LAN, you will NOT be able to wake it up remotely via Wake-on-LAN."
-	printf "Do you want to proceed? (y/n): "
-	read confirm
-	
-	if [[ "$confirm" == [Yy]* ]]; then
-		echo "Suspending server..."
-		ssh -f -p 2222 vit@panther-minor "sleep 3 && sudo systemctl suspend"
-	else
-		echo "Suspend aborted."
-	fi
-}
