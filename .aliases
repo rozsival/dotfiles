@@ -148,6 +148,6 @@ alias path='echo -e ${PATH//:/\\n}'
 
 # Panther Minor
 alias panther-minor="ssh -p 2222 vit@panther-minor"
-alias panther-minor-contoller="ssh -p 2222 vit@pi-zero"
 alias panther-minor-sleep='ssh -f -p 2222 vit@panther-minor "sudo systemctl suspend"'
 alias panther-minor-wake='ssh -f -p 2222 vit@pi-zero "wakeonlan 9c:6b:00:c6:4e:0b"'
+alias pi-zero="ssh -p 2222 vit@pi-zero"
