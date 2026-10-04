@@ -23,10 +23,10 @@ test for both.
 ## ✨ Highlights
 
 | Feature                  | What it gives you                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+|--------------------------|--------------------------------------------------------------------------------------------------------------|
 | **One-command install**  | `install.sh` gets git, clones the repo and runs `dot setup`: Homebrew, shell, links, runtimes, agents        |
 | **Agent-guided rest**    | `dot agent` hands the manual steps to OMP or Claude Code; you click and approve, the agent verifies          |
-| **Acceptance test**      | `dot doctor` checks the whole machine, and every ✗ comes with the command that fixes it                      |
+| **Acceptance test**      | `dot doctor` checks the whole machine, and every ✗ comes with the command that fixes it                     |
 | **No private keys**      | SSH and commit signing go through the 1Password agent; `~/.ssh` holds only `.pub` key selectors              |
 | **Secrets in 1Password** | Credential files are kept as 1Password Documents and restored with `dot vault pull`                          |
 | **Rendered identities**  | `~/.gitconfig` and per-account SSH blocks come from devbox's `identities.conf`, never from git               |
@@ -79,25 +79,25 @@ flowchart LR
 phase order. It tells you exactly what to click or type, waits for you, then checks the result itself. It never reads a
 secret's value.
 
-| #   | Phase              | What happens                                                                         |
-| --- | ------------------ | ------------------------------------------------------------------------------------ |
-| 1   | 1Password          | Sign in, Touch ID on, SSH agent and CLI integration on                               |
-| 2   | Secret files       | `dot vault pull` restores every `vault.list` file with its mode                      |
-| 3   | devbox tooling     | `devbox agent install`: `omp`/`claude` launchers, `gh` shim, `devbox-identities`     |
-| 4   | git & ssh identity | `dot identities` renders `~/.gitconfig`, SSH blocks and `allowed_signers`            |
-| 5   | GitHub             | `gh auth login`, SSH and signing checks, repos switched to SSH remotes               |
-| 6   | Tailscale & devbox | Tailnet login, `herdr machine add devbox`, `devbox doctor laptop`                    |
-| 7   | Agents & phone     | Claude Code `/login`, Moshi pairing                                                  |
-| 8   | Apps               | `dot brew`, App Store apps via `dot brew --mas`, JetBrains IDEs, first-run approvals |
-| 9   | Cloud & registries | `gcloud`, `az`, `glab` logins, only for what you use                                 |
-| 10  | Finish             | `dot doctor` prints `✓ all checks passed`                                            |
+| #  | Phase              | What happens                                                                         |
+|----|--------------------|--------------------------------------------------------------------------------------|
+| 1  | 1Password          | Sign in, Touch ID on, SSH agent and CLI integration on                               |
+| 2  | Secret files       | `dot vault pull` restores every `vault.list` file with its mode                      |
+| 3  | devbox tooling     | `devbox agent install`: `omp`/`claude` launchers, `gh` shim, `devbox-identities`     |
+| 4  | git & ssh identity | `dot identities` renders `~/.gitconfig`, SSH blocks and `allowed_signers`            |
+| 5  | GitHub             | `gh auth login`, SSH and signing checks, repos switched to SSH remotes               |
+| 6  | Tailscale & devbox | Tailnet login, `herdr machine add devbox`, `devbox doctor laptop`                    |
+| 7  | Agents & phone     | Claude Code `/login`, Moshi pairing                                                  |
+| 8  | Apps               | `dot brew`, App Store apps via `dot brew --mas`, JetBrains IDEs, first-run approvals |
+| 9  | Cloud & registries | `gcloud`, `az`, `glab` logins, only for what you use                                 |
+| 10 | Finish             | `dot doctor` prints `✓ all checks passed`                                           |
 
 ## 🧰 Commands
 
 `dot` is on the PATH once linked: `~/.local/bin/dot` points at `bin/dot`.
 
 | Command                                   | What it does                                                                                       |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
+|-------------------------------------------|----------------------------------------------------------------------------------------------------|
 | `dot setup`                               | Everything automatable; idempotent                                                                 |
 | `dot agent [omp\|claude]`                 | Starts the guided setup in an agent harness (default: OMP)                                         |
 | `dot doctor`                              | Checks the whole machine and exits 1 while anything fails                                          |
@@ -109,13 +109,14 @@ secret's value.
 | `dot vault <status\|pull\|push> [title…]` | Syncs the files in `vault.list` with 1Password Documents                                           |
 
 > [!TIP]
-> Grant Ghostty **App Management** (System Settings → Privacy & Security). Without it macOS refuses Homebrew's changes to
+> Grant Ghostty **App Management** (System Settings → Privacy & Security). Without it macOS refuses Homebrew's changes
+to
 > apps it did not install, and every such cask stops for Touch ID.
 
 ## 📦 How files land
 
 | Kind     | Lives in                      | Mechanism                                                            | Examples                                                                      |
-| -------- | ----------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+|----------|-------------------------------|----------------------------------------------------------------------|-------------------------------------------------------------------------------|
 | Tracked  | `home/`                       | Symlinked file by file by `dot link`; editing in `~` edits the repo  | bash, shared git config, `~/.ssh/config`, Ghostty, mise                       |
 | Seeded   | `seed/`                       | Copied once if absent; from then on the tool owns it                 | OMP preset (rsynced to the devbox, so it can't be a symlink), herdr           |
 | Rendered | nowhere in git                | `dot identities` builds them from `~/.config/devbox/identities.conf` | `~/.gitconfig`, GitHub SSH blocks, `allowed_signers`, `*.pub`                 |
@@ -128,7 +129,7 @@ secret's value.
 Bash 5 from Homebrew, the same shell the devbox runs. Startup stays under 400 ms, and `dot doctor` measures it.
 
 | File                                                 | Loaded by                                      | Role                                                                   |
-| ---------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
+|------------------------------------------------------|------------------------------------------------|------------------------------------------------------------------------|
 | [`env.sh`](home/.config/bash/env.sh)                 | Every shell, including agents' non-interactive | PATH with the devbox launchers first, then mise shims; no subprocesses |
 | [`interactive.sh`](home/.config/bash/interactive.sh) | Interactive shells                             | History, completion, starship prompt; slow `… init` output is cached   |
 | [`aliases.sh`](home/.config/bash/aliases.sh)         | Interactive shells                             | Only the aliases that history shows are in use                         |
@@ -156,7 +157,7 @@ except to restore `identities.conf` and `secrets.env` from 1Password. It owns wh
 ## 📁 Repository layout
 
 | Path                                                   | Contents                                                                 |
-| ------------------------------------------------------ | ------------------------------------------------------------------------ |
+|--------------------------------------------------------|--------------------------------------------------------------------------|
 | [`install.sh`](install.sh)                             | Fresh-Mac entry: Xcode CLT, clone, `exec bin/dot setup`                  |
 | [`bin/dot`](bin/dot)                                   | The CLI; bash 3.2, because it runs before Homebrew bash exists           |
 | [`Brewfile`](Brewfile), [`Brewfile.mas`](Brewfile.mas) | Homebrew packages and casks; App Store apps                              |
@@ -170,7 +171,7 @@ except to restore `identities.conf` and `secrets.env` from 1Password. It owns wh
 ## ➕ Adding things
 
 | To add            | Do this                                                                                   |
-| ----------------- | ----------------------------------------------------------------------------------------- |
+|-------------------|-------------------------------------------------------------------------------------------|
 | CLI or app        | A line in `Brewfile` (App Store: `Brewfile.mas`), then `dot brew`                         |
 | Third-party tap   | Fully qualified entry with `trusted: true`, so only that formula is trusted               |
 | Dotfile           | The file in `home/` at its path relative to `~`, then `dot link`                          |
@@ -183,7 +184,7 @@ Rules for agents changing this repo live in [`AGENTS.md`](AGENTS.md).
 ## 👤 Ownership
 
 | Item       | Details                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------- |
+|------------|---------------------------------------------------------------------------------------------|
 | Maintainer | [@rozsival](https://github.com/rozsival)                                                    |
 | Issues     | [GitHub Issues](https://github.com/rozsival/dotfiles/issues)                                |
 | Companion  | [devbox](https://github.com/rozsival/devbox), the remote agent container this laptop drives |
