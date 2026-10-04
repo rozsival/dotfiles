@@ -132,6 +132,11 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   deleting; root-owned ones (python.org, `/usr/local/bin`) are the person's to remove with sudo. First
   rebase what was built on a removed Python: `uv tool install --reinstall --managed-python <tool>`, and
   move `~/.config/gcloud/virtenv` aside so gcloud uses Homebrew's Python.
+- Packages the Brewfile does not declare: `bin/dot brew --cleanup` lists them. `brew bundle cleanup
+  --force` first resets Homebrew's trust store to the Brewfile, so it cannot uninstall a leftover from a
+  third-party tap (and re-trusting before re-running is wiped again). Remove each such leftover on its
+  own: `brew trust --formula <tap>/<name> && brew uninstall <name> && brew untap <tap>` (untapping also
+  drops the trust entry).
 - App Store: the person signs in to the App Store app (`mas` cannot), then `bin/dot brew --mas`. Large (Xcode, Final Cut
   Pro, Logic Pro): confirm before starting.
 - No cask, manual download: Moshi (above), Amphetamine Enhancer (from within Amphetamine).
