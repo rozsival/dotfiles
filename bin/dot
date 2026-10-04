@@ -775,6 +775,8 @@ cmd_doctor() {
   fi
 }
 
+# A new command or option also goes into usage() and
+# home/.local/share/bash-completion/completions/dot.bash.
 main() {
   local cmd="${1:-help}"
   shift || true

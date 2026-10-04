@@ -67,7 +67,8 @@ not `git config --global`.
 ## Verify
 
 ```bash
-shellcheck bin/dot install.sh macos/defaults.sh home/.bashrc home/.bash_profile home/.config/bash/*.sh
+shellcheck bin/dot install.sh macos/defaults.sh home/.bashrc home/.bash_profile home/.config/bash/*.sh \
+  home/.local/share/bash-completion/completions/dot.bash
 /bin/bash -n bin/dot && /bin/bash -n install.sh && /bin/bash -n macos/defaults.sh
 bin/dot link --dry-run      # what linking would change
 bin/dot macos --check       # read-only

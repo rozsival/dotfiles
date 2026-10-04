@@ -94,7 +94,8 @@ secret's value.
 
 ## 🧰 Commands
 
-`dot` is on the PATH once linked: `~/.local/bin/dot` points at `bin/dot`.
+`dot` is on the PATH once linked: `~/.local/bin/dot` points at `bin/dot`. Tab completes its commands, options and
+`vault.list` titles.
 
 | Command                                   | What it does                                                                                       |
 |-------------------------------------------|----------------------------------------------------------------------------------------------------|
