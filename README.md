@@ -36,14 +36,14 @@ flowchart LR
    [`workstation-setup`](.agents/skills/workstation-setup/SKILL.md) skill, and works through it in this
    order:
 
-   1. 1Password
-   2. Restoring secret files from 1Password
-   3. devbox laptop tooling
-   4. git/ssh identities
-   5. GitHub
-   6. Tailscale and the devbox
-   7. Agent logins and Moshi
-   8. App Store and apps
+  1. 1Password
+  2. Restoring secret files from 1Password
+  3. devbox laptop tooling
+  4. git/ssh identities
+  5. GitHub
+  6. Tailscale and the devbox
+  7. Agent logins and Moshi
+  8. App Store and apps
 
 You do every sign-in and approval; the agent tells you what to do and checks the result.
 
