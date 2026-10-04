@@ -1,0 +1,799 @@
+#!/usr/bin/env bash
+# dot - takes this Mac from a fresh install to `dot doctor` passing. README.md
+# has the walkthrough. Bash 3.2 compatible on purpose: `install.sh` runs it
+# before Homebrew's bash exists.
+set -euo pipefail
+
+DOTFILES="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
+# Homebrew 7 asks before installing by default; `dot` runs unattended and from agents.
+export HOMEBREW_NO_ASK=1
+# Homebrew retries a refused cask step (macOS App Management) under sudo; without
+# a terminal, as in an agent's shell, that waits on a Touch ID prompt no one sees.
+# Fail instead: the app in /Applications stays untouched and unadopted until
+# `dot brew` runs in a terminal. Safe because no Brewfile cask ships two apps -
+# one that did could lose its first, already adopted app in Homebrew's rollback.
+[ -t 0 ] || export HOMEBREW_NO_SUDO=1
+OP_ACCOUNT="${DOT_OP_ACCOUNT:-my.1password.com}"
+OP_VAULT="${DOT_OP_VAULT:-Workstation}"
+DEVBOX_DIR="${DEVBOX_DIR:-$HOME/projects/rozsival/devbox}"
+DEVBOX_REPO=https://github.com/rozsival/devbox.git
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
+IDENTITIES_LIB="$HOME/.local/libexec/devbox-identities"
+OP_AGENT_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+OP_SSH_SIGN=/Applications/1Password.app/Contents/MacOS/op-ssh-sign
+# Same pins as devbox's container/skills.sh, so laptop and devbox agents match.
+SKILLS_CLI_VERSION=1.5.26
+AGENT_BROWSER_VERSION=0.37.1
+SKILLS="vercel-labs/agent-browser:agent-browser anthropics/skills:skill-creator vercel-labs/skills:find-skills herdrdev/herdr:herdr max-sixty/worktrunk:worktrunk"
+GCLOUD_COMPONENTS='gke-gcloud-auth-plugin alpha beta cloud-sql-proxy'
+
+if [ -t 1 ]; then
+  B=$'\033[1m' RED=$'\033[31m' GRN=$'\033[32m' YEL=$'\033[33m' DIM=$'\033[2m' RST=$'\033[0m'
+else
+  B='' RED='' GRN='' YEL='' DIM='' RST=''
+fi
+FAILS=0
+WARNS=0
+step() { printf '\n%s==> %s%s\n' "$B" "$*" "$RST"; }
+info() { printf '    %s\n' "$*"; }
+ok() { printf '  %s✓%s %s\n' "$GRN" "$RST" "$*"; }
+warn() {
+  printf '  %s!%s %s\n' "$YEL" "$RST" "$*"
+  WARNS=$((WARNS + 1))
+}
+bad() {
+  printf '  %s✗%s %s\n' "$RED" "$RST" "$*"
+  FAILS=$((FAILS + 1))
+}
+hint() { printf '    %s→ %s%s\n' "$DIM" "$*" "$RST"; }
+die() {
+  printf '%sdot: %s%s\n' "$RED" "$*" "$RST" >&2
+  exit 1
+}
+have() { command -v "$1" >/dev/null 2>&1; }
+# Bash 3.2 keeps the backslash of an escaped `\~` in a replacement; a variable is literal in both.
+tilde() {
+  local t='~'
+  printf '%s' "${1/#"$HOME"/$t}"
+}
+
+usage() {
+  cat <<EOF
+Usage: dot <command> [options]
+
+Fresh Mac:   /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/rozsival/dotfiles/main/install.sh)"
+
+Commands:
+  setup              Everything automatable, idempotent: Xcode CLT, Homebrew, Brewfile,
+                     login shell, links, runtimes, AI agents, Touch ID sudo, macOS defaults
+  agent [omp|claude] Continue with the guided setup in an agent harness (default: omp)
+  doctor             Acceptance test for the whole machine; exits 1 while anything is missing
+  link [--dry-run]   Symlink home/ into ~ (backing up what it replaces) and copy seed/ if absent
+  brew [--mas|--check|--cleanup]
+                     brew bundle: Brewfile, Brewfile.mas (App Store sign-in first),
+                     check what is missing, or list what is installed but not declared
+  macos [--check]    Apply macOS defaults, or report drift without changing anything
+  identities [--check]
+                     Render ~/.gitconfig, ~/.ssh/config.d/identities and allowed_signers
+                     from ~/.config/devbox/identities.conf
+  vault <status|pull|push> [--force] [title...]
+                     Files listed in vault.list, kept as 1Password Documents
+                     (account $OP_ACCOUNT, vault $OP_VAULT)
+  update             Upgrade Homebrew packages, mise tools, OMP, Claude Code, skills, moshi-hook
+EOF
+}
+
+# -- setup --------------------------------------------------------------------
+
+brew_env() {
+  [ -x "$HOMEBREW_PREFIX/bin/brew" ] || return 1
+  eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
+}
+
+# The PATH an interactive shell gets, so later steps find mise shims, the real
+# OMP and Claude installs, and the devbox launchers once they exist.
+shell_env() {
+  # shellcheck source=home/.config/bash/env.sh
+  . "$DOTFILES/home/.config/bash/env.sh"
+}
+
+setup_clt() {
+  if xcode-select -p >/dev/null 2>&1; then
+    ok "installed at $(xcode-select -p)"
+    return
+  fi
+  xcode-select --install >/dev/null 2>&1 || true
+  info 'Finish the installer dialog; waiting for it...'
+  until xcode-select -p >/dev/null 2>&1; do sleep 5; done
+  ok installed
+}
+
+setup_brew() {
+  if ! brew_env; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    brew_env || die "Homebrew did not end up in $HOMEBREW_PREFIX"
+  fi
+  ok "$(brew --version | head -1)"
+}
+
+setup_shell() {
+  local bash_path="$HOMEBREW_PREFIX/bin/bash"
+  grep -qx "$bash_path" /etc/shells || echo "$bash_path" | sudo tee -a /etc/shells >/dev/null
+  [ "$(login_shell)" = "$bash_path" ] || chsh -s "$bash_path"
+  ok "login shell $bash_path"
+}
+
+login_shell() { dscl . -read "/Users/$USER" UserShell | awk '{print $2}'; }
+
+setup_runtimes() {
+  mise install --yes
+  mise reshim
+  ok "node $(mise exec -- node --version)"
+  if ! rustup default >/dev/null 2>&1; then
+    rustup default stable
+  fi
+  ok "$(rustup default)"
+  # The Homebrew cask ships only gcloud/gsutil/bq; kubectl against GKE needs the
+  # auth plugin. Installed components land in share/google-cloud-sdk/bin (env.sh).
+  # shellcheck disable=SC2086 # a list of component ids, split on purpose
+  gcloud components install --quiet $GCLOUD_COMPONENTS
+  ok "gcloud components: $GCLOUD_COMPONENTS"
+}
+
+real_omp() {
+  local bin
+  for bin in "$HOME/.bun/bin/omp" "$HOME/.local/bin/omp"; do
+    [ -x "$bin" ] && {
+      printf '%s' "$bin"
+      return 0
+    }
+  done
+  return 1
+}
+
+setup_agents() {
+  real_omp >/dev/null || curl -fsSL https://omp.sh/install.sh | sh
+  ok "omp $("$(real_omp)" --version 2>/dev/null | head -1)"
+  [ -x "$HOME/.local/bin/claude" ] || curl -fsSL https://claude.ai/install.sh | bash
+  ok "claude $("$HOME/.local/bin/claude" --version 2>/dev/null | head -1)"
+
+  # npm's --prefix puts the CLI in ~/.local/bin, independent of which Node mise
+  # has active; npm 11 runs no install scripts unless allow-listed.
+  if [ ! -x "$HOME/.local/bin/agent-browser" ]; then
+    npm install -g --prefix "$HOME/.local" --allow-scripts=agent-browser "agent-browser@$AGENT_BROWSER_VERSION"
+    "$HOME/.local/bin/agent-browser" install
+  fi
+  ok "agent-browser $("$HOME/.local/bin/agent-browser" --version 2>/dev/null)"
+
+  # ~/.agents/skills is what OMP reads; `--agent claude-code` symlinks each into
+  # ~/.claude/skills for Claude Code (devbox container/skills.sh does the same).
+  local pair repo skill
+  for pair in $SKILLS; do
+    repo=${pair%%:*} skill=${pair#*:}
+    if [ ! -d "$HOME/.agents/skills/$skill" ]; then
+      npx --yes "skills@$SKILLS_CLI_VERSION" add "$repo" --skill "$skill" --global --agent universal claude-code --yes
+    fi
+    ok "skill $skill"
+  done
+
+  # Phone notifications and approvals: the daemon plus OMP/Claude hooks. Pairing
+  # with the Moshi app is a guided step (`moshi-hook pair`).
+  brew services start moshi-hook >/dev/null
+  [ -f "$HOME/.omp/agent/extensions/moshi-hooks.ts" ] || moshi-hook install --target omp,claude
+  ok 'moshi-hook running, hooks installed'
+}
+
+setup_touchid() {
+  if grep -qs '^auth[[:space:]].*pam_tid.so' /etc/pam.d/sudo_local; then
+    ok 'already enabled'
+    return
+  fi
+  # sudo_local survives macOS updates, unlike edits to /etc/pam.d/sudo.
+  sed 's/^#auth/auth/' /etc/pam.d/sudo_local.template | sudo tee /etc/pam.d/sudo_local >/dev/null
+  ok enabled
+}
+
+cmd_setup() {
+  [ "$(uname -s)" = Darwin ] || die 'macOS only'
+  [ "$(uname -m)" = arm64 ] || die "Apple Silicon only: paths assume $HOMEBREW_PREFIX"
+  sudo -v
+  step 'Xcode Command Line Tools'
+  setup_clt
+  step Homebrew
+  setup_brew
+  step 'Packages (Brewfile)'
+  brew bundle --file "$DOTFILES/Brewfile" || warn 'some Brewfile entries failed; fix them and re-run `dot brew`'
+  step 'Login shell'
+  setup_shell
+  step Dotfiles
+  cmd_link
+  shell_env
+  step Runtimes
+  setup_runtimes
+  step 'AI agents'
+  setup_agents
+  step 'Touch ID for sudo'
+  setup_touchid
+  step 'macOS defaults'
+  "$DOTFILES/macos/defaults.sh" || warn 'some defaults failed to apply; see above'
+
+  step 'Automated part done'
+  cat <<EOF
+    The rest needs you: 1Password, SSH keys on GitHub, Tailscale, logins, App Store.
+    Open Ghostty (it starts the new login shell) and run:
+
+      cd $(tilde "$DOTFILES") && bin/dot agent
+
+    An agent session walks you through it, driven by \`dot doctor\`.
+EOF
+}
+
+# -- link ---------------------------------------------------------------------
+
+# Every file under home/ becomes a symlink at the same path under ~ (files, not
+# directories, so tools can keep their own state next to them). seed/ files are
+# copied once and then owned by the machine: they are rewritten by the tools
+# themselves (OMP's config is also rsync'd to the devbox, where a symlink would
+# arrive dangling).
+cmd_link() {
+  local dry=0 src rel dst backup='' linked=0 changed=0 manifest="$STATE_DIR/links" current
+  [ "${1:-}" = --dry-run ] && dry=1
+  current="$(mktemp)"
+  while IFS= read -r -d '' src; do
+    rel=${src#"$DOTFILES/home/"}
+    dst="$HOME/$rel"
+    echo "$rel" >>"$current"
+    linked=$((linked + 1))
+    [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ] && continue
+    changed=$((changed + 1))
+    if [ -e "$dst" ] || [ -L "$dst" ]; then
+      [ -n "$backup" ] || backup="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+      info "backup ~/$rel -> $(tilde "$backup")/$rel"
+      if [ $dry = 0 ]; then
+        mkdir -p "$(dirname "$backup/$rel")"
+        mv "$dst" "$backup/$rel"
+      fi
+    fi
+    info "link   ~/$rel"
+    if [ $dry = 0 ]; then
+      mkdir -p "$(dirname "$dst")"
+      ln -s "$src" "$dst"
+    fi
+  done < <(find "$DOTFILES/home" \( -type f -o -type l \) ! -name .DS_Store -print0)
+
+  # Links whose source left the repo since the last run.
+  if [ -f "$manifest" ]; then
+    while IFS= read -r rel; do
+      dst="$HOME/$rel"
+      grep -qxF "$rel" "$current" && continue
+      case "$(readlink "$dst" 2>/dev/null)" in "$DOTFILES/home/"*) ;; *) continue ;; esac
+      info "unlink ~/$rel (gone from home/)"
+      [ $dry = 1 ] || rm "$dst"
+    done <"$manifest"
+  fi
+
+  while IFS= read -r -d '' src; do
+    rel=${src#"$DOTFILES/seed/"}
+    dst="$HOME/$rel"
+    [ -e "$dst" ] && continue
+    info "seed   ~/$rel"
+    if [ $dry = 0 ]; then
+      mkdir -p "$(dirname "$dst")"
+      cp -p "$src" "$dst"
+    fi
+  done < <(find "$DOTFILES/seed" -type f ! -name .DS_Store -print0)
+
+  if [ $dry = 0 ]; then
+    chmod 700 "$HOME/.ssh"
+    mkdir -p "$HOME/.ssh/config.d"
+    chmod 700 "$HOME/.ssh/config.d"
+    mkdir -p "$STATE_DIR"
+    mv "$current" "$manifest"
+  else
+    rm -f "$current"
+  fi
+  ok "$linked links ($changed changed)${backup:+, replaced files in $(tilde "$backup")}"
+}
+
+# -- identities ---------------------------------------------------------------
+
+# Renders the laptop-side identity config devbox leaves to you (devbox
+# docs/git.md, "Laptop install") with devbox's own renderer, so both machines
+# derive from one ~/.config/devbox/identities.conf. `devbox doctor laptop` reads
+# these with `git config --global`, which does not follow [include] - hence
+# a generated ~/.gitconfig rather than an include of a generated file.
+# $1: output directory standing in for $HOME.
+render_identities() (
+  local out="$1" slug default dir url
+  # shellcheck source=/dev/null
+  . "$IDENTITIES_LIB"
+  # `||`, not set -e: the caller tests this function, which disables errexit.
+  di_check >/dev/null || exit 1
+  default="$(di_default)"
+  mkdir -p "$out/.config/git/identities" "$out/.ssh/config.d"
+  {
+    printf '# Generated by `dot identities` from ~/.config/devbox/identities.conf: edit\n'
+    printf '# that file and re-run. Shared settings: ~/.config/git/config (dotfiles).\n'
+    di_render_user_block "$default"
+    printf '[gpg]\n\tformat = ssh\n[gpg "ssh"]\n\tprogram = %s\n\tallowedSignersFile = %s/.ssh/allowed_signers\n' "$OP_SSH_SIGN" "$HOME"
+    printf '[commit]\n\tgpgsign = true\n[tag]\n\tgpgsign = true\n'
+    # Trees, shortest first: among matching includes the last one read wins.
+    for slug in $(di_dir_slugs); do
+      dir="$(di_raw "$slug" dir)"
+      while [ "${dir%/}" != "$dir" ]; do dir=${dir%/}; done
+      printf '[includeIf "gitdir:%s/"]\n\tpath = ~/.config/git/identities/user-%s.gitconfig\n' "$dir" "$slug"
+      di_render_user_gitconfig "$slug" >"$out/.config/git/identities/user-$slug.gitconfig"
+    done
+    # Owners after trees, so an org's identity wins wherever it is cloned.
+    for slug in $(di_slugs); do
+      [ -n "$(di_get "$slug" orgs)" ] || continue
+      for url in $(di_org_urls "$slug"); do
+        printf '[includeIf "hasconfig:remote.*.url:%s"]\n\tpath = ~/.config/git/identities/org-%s.gitconfig\n' "$url" "$slug"
+      done
+      di_render_org_gitconfig "$slug" >"$out/.config/git/identities/org-$slug.gitconfig"
+    done
+  } >"$out/.gitconfig"
+  di_render_ssh_config >"$out/.ssh/config.d/identities"
+  # The public halves that select a 1Password key per host (IdentityFile *.pub
+  # + IdentitiesOnly); the registry carries them, so a new Mac needs no export.
+  for slug in $(di_slugs); do
+    printf '%s\n' "$(di_get "$slug" pubkey)" >"$out/.ssh/id_$slug.pub"
+    printf '%s\n' "$(di_get "$slug" signing_pubkey)" >"$out/.ssh/signing_$slug.pub"
+  done
+  # devbox renders allowed_signers from the signing_*.pub files under $HOME;
+  # point it at the ones just rendered, so a first run is not left empty.
+  HOME="$out" di_render_allowed_signers >"$out/.ssh/allowed_signers"
+)
+
+# Same key, maybe another comment: not worth rewriting a .pub over.
+same_file() {
+  case "$1" in
+  *.pub) [ -f "$3" ] && [ "$(awk '{print $1, $2}' "$2")" = "$(awk '{print $1, $2}' "$3")" ] ;;
+  *) cmp -s "$2" "$3" ;;
+  esac
+}
+
+cmd_identities() {
+  local check=0 tmp rel stale=0 dst mode
+  [ "${1:-}" = --check ] && check=1
+  [ -r "$IDENTITIES_LIB" ] || die "devbox-identities missing: run \`./bin/devbox agent install\` in $(tilde "$DEVBOX_DIR")"
+  [ -r "$HOME/.config/devbox/identities.conf" ] || die 'no ~/.config/devbox/identities.conf: `dot vault pull` restores it'
+  tmp="$(mktemp -d)"
+  if ! render_identities "$tmp"; then
+    rm -rf "$tmp"
+    die 'identities.conf does not validate: devbox-identities check'
+  fi
+  for rel in $(cd "$tmp" && find . -type f | sed 's|^\./||'); do
+    dst="$HOME/$rel"
+    same_file "$rel" "$tmp/$rel" "$dst" && continue
+    stale=$((stale + 1))
+    if [ $check = 1 ]; then
+      info "stale ~/$rel"
+      continue
+    fi
+    # A hand-written ~/.gitconfig predates `dot identities`: keep a copy once.
+    if [ "$rel" = .gitconfig ] && [ -f "$dst" ] && ! head -1 "$dst" | grep '`dot identities`' >/dev/null; then
+      mkdir -p "$HOME/.dotfiles-backup"
+      cp -p "$dst" "$HOME/.dotfiles-backup/gitconfig.$(date +%Y%m%d-%H%M%S)"
+      info "backed up the hand-written ~/.gitconfig to ~/.dotfiles-backup/"
+    fi
+    mode=600
+    case "$rel" in *.pub) mode=644 ;; esac
+    mkdir -p "$(dirname "$dst")"
+    install -m "$mode" "$tmp/$rel" "$dst"
+    info "wrote ~/$rel"
+  done
+  rm -rf "$tmp"
+  if [ $check = 1 ]; then
+    [ $stale = 0 ]
+    return
+  fi
+  ok "identity config current ($stale file(s) updated)"
+}
+
+# -- vault --------------------------------------------------------------------
+
+vault_entries() { grep -vE '^[[:space:]]*(#|$)' "$DOTFILES/vault.list"; }
+
+op_doc_exists() { op item get "$1" --vault "$OP_VAULT" --account "$OP_ACCOUNT" --format json >/dev/null 2>&1; }
+
+cmd_vault() {
+  local sub="${1:-status}" force=0 title path mode want tmp exists
+  shift || true
+  case "$sub" in status | pull | push) ;; *) die 'usage: dot vault <status|pull|push> [--force] [title...]' ;; esac
+  [ "${1:-}" = --force ] && force=1 && shift
+  have op || die '1Password CLI missing: dot brew'
+  op whoami --account "$OP_ACCOUNT" >/dev/null 2>&1 || op signin --account "$OP_ACCOUNT" >/dev/null ||
+    die "op cannot reach $OP_ACCOUNT: 1Password app -> Settings -> Developer -> Integrate with 1Password CLI"
+  if [ "$sub" = push ] && ! op vault get "$OP_VAULT" --account "$OP_ACCOUNT" >/dev/null 2>&1; then
+    op vault create "$OP_VAULT" --account "$OP_ACCOUNT" >/dev/null
+    ok "created vault $OP_VAULT"
+  fi
+  umask 077
+  # fd 3: op must not read the loop's input as its own stdin.
+  while read -r title path mode <&3; do
+    if [ $# -gt 0 ]; then
+      for want in "$@"; do [ "$want" = "$title" ] && break; done
+      [ "$want" = "$title" ] || continue
+    fi
+    path=${path/#\~/$HOME}
+    exists=0
+    op_doc_exists "$title" && exists=1
+    case "$sub" in
+    status)
+      if [ -f "$path" ] && [ $exists = 1 ]; then
+        ok "$title"
+      elif [ $exists = 1 ]; then
+        warn "$title: in 1Password, not on disk (dot vault pull)"
+      elif [ -f "$path" ]; then
+        warn "$title: on disk, not in 1Password (dot vault push)"
+      else
+        bad "$title: neither on disk nor in 1Password"
+      fi
+      ;;
+    pull)
+      if [ -f "$path" ] && [ $force = 0 ]; then
+        ok "$title: present, kept (--force overwrites)"
+      elif [ $exists = 0 ]; then
+        bad "$title: not in vault $OP_VAULT"
+      else
+        mkdir -p "$(dirname "$path")"
+        tmp="$(mktemp)"
+        op document get "$title" --vault "$OP_VAULT" --account "$OP_ACCOUNT" >"$tmp"
+        install -m "$mode" "$tmp" "$path"
+        rm -f "$tmp"
+        ok "$title -> $(tilde "$path")"
+      fi
+      ;;
+    push)
+      if [ ! -f "$path" ]; then
+        warn "$title: no $(tilde "$path") to upload"
+      elif [ $exists = 1 ]; then
+        op document edit "$title" "$path" --vault "$OP_VAULT" --account "$OP_ACCOUNT" >/dev/null
+        ok "$title: updated"
+      else
+        op document create "$path" --title "$title" --vault "$OP_VAULT" --account "$OP_ACCOUNT" >/dev/null
+        ok "$title: created"
+      fi
+      ;;
+    esac
+  done 3< <(vault_entries)
+  [ $FAILS = 0 ]
+}
+
+# -- brew / macos / update ----------------------------------------------------
+
+cmd_brew() {
+  brew_env || die 'Homebrew missing: dot setup'
+  case "${1:-}" in
+  '') brew bundle --file "$DOTFILES/Brewfile" ;;
+  --mas) brew bundle --file "$DOTFILES/Brewfile.mas" ;;
+  --check)
+    brew bundle check --file "$DOTFILES/Brewfile" --verbose
+    brew bundle check --file "$DOTFILES/Brewfile.mas" --verbose
+    ;;
+  # Dry run on purpose: lists what `brew bundle cleanup --force` would remove.
+  --cleanup) brew bundle cleanup --file "$DOTFILES/Brewfile" ;;
+  *) die 'usage: dot brew [--mas|--check|--cleanup]' ;;
+  esac
+}
+
+cmd_update() {
+  brew_env || die 'Homebrew missing: dot setup'
+  shell_env
+  step Homebrew
+  brew update
+  brew upgrade
+  brew bundle --file "$DOTFILES/Brewfile"
+  step mise
+  mise upgrade --yes
+  step OMP
+  # By name, so through the devbox launcher once installed: for `update` it
+  # drops its own PATH entries and omp's updater finds the real install. The
+  # real binary run directly finds the launcher symlink first and refuses.
+  omp update
+  step 'Claude Code'
+  "$HOME/.local/bin/claude" update
+  step Skills
+  npx --yes "skills@$SKILLS_CLI_VERSION" update --global --yes
+  step moshi-hook
+  # A new release needs its hooks rewritten and the daemon restarted.
+  moshi-hook install --target omp,claude
+  brew services restart moshi-hook
+  rm -rf "$CACHE_DIR"
+  ok 'completion caches cleared; they rebuild in the next shell'
+}
+
+# -- agent --------------------------------------------------------------------
+
+cmd_agent() {
+  local harness="${1:-omp}" bin=''
+  case "$harness" in
+  omp) bin="$(real_omp)" || true ;;
+  claude) bin="$HOME/.local/bin/claude" ;;
+  *) die 'usage: dot agent [omp|claude]' ;;
+  esac
+  [ -n "$bin" ] && [ -x "$bin" ] || die "$harness is not installed: dot setup"
+  cd "$DOTFILES"
+  # The real binary, not the devbox launcher: this session acts as you, and the
+  # launcher's agent git override may not even be installed yet.
+  exec "$bin" "$(cat "$DOTFILES/setup/PROMPT.md")"
+}
+
+# -- doctor -------------------------------------------------------------------
+
+# How a fresh login shell resolves a command (what panes and agents will get),
+# independent of the PATH `dot` happened to inherit.
+fresh_which() {
+  env -i HOME="$HOME" USER="$USER" PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+    /bin/bash --noprofile --norc -c '. "$HOME/.config/bash/env.sh" 2>/dev/null; type -P "$1"' _ "$1"
+}
+
+# "dir name" for each command Homebrew links whose first hit on that PATH is
+# another install. mise shims are meant to win for the runtimes mise manages.
+# Builtins only: one shell, no fork per name.
+fresh_shadowed() {
+  env -i HOME="$HOME" USER="$USER" PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+    /bin/bash --noprofile --norc -c '
+      . "$HOME/.config/bash/env.sh" 2>/dev/null
+      IFS=: read -r -a dirs <<<"$PATH"
+      for bin in "$1"/bin/* "$1"/sbin/*; do
+        name=${bin##*/}
+        for dir in "${dirs[@]}"; do
+          [ -x "$dir/$name" ] && [ ! -d "$dir/$name" ] || continue
+          case $dir in "$1"/* | "$HOME/.local/share/mise/shims") ;; *) printf "%s %s\n" "$dir" "$name" ;; esac
+          break
+        done
+      done' _ "$HOMEBREW_PREFIX"
+}
+
+doctor_system() {
+  step System
+  ok "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)), $(uname -m)"
+  xcode-select -p >/dev/null 2>&1 && ok 'Xcode Command Line Tools' || {
+    bad 'Xcode Command Line Tools missing'
+    hint 'dot setup'
+  }
+  if brew_env; then
+    if brew bundle check --file "$DOTFILES/Brewfile" --no-upgrade >/dev/null 2>&1; then
+      ok 'Brewfile satisfied'
+    else
+      bad 'Brewfile not satisfied'
+      hint 'dot brew --check lists what is missing; run dot brew in your own terminal (casks may ask for Touch ID; granting Ghostty App Management avoids it)'
+    fi
+    if brew bundle check --file "$DOTFILES/Brewfile.mas" --no-upgrade >/dev/null 2>&1; then
+      ok 'App Store apps (Brewfile.mas)'
+    else
+      warn 'App Store apps missing'
+      hint 'sign in to the App Store app, then: dot brew --mas'
+    fi
+  else
+    bad 'Homebrew missing'
+    hint 'dot setup'
+  fi
+  [ "$(login_shell)" = "$HOMEBREW_PREFIX/bin/bash" ] && ok "login shell $HOMEBREW_PREFIX/bin/bash" || {
+    bad "login shell is $(login_shell)"
+    hint 'dot setup'
+  }
+  # `grep >/dev/null`, never `grep -q`, after a pipe: -q exits on the first
+  # match, the writer dies of SIGPIPE, and pipefail turns a pass into a fail.
+  fdesetup status | grep 'FileVault is On' >/dev/null && ok FileVault || {
+    bad 'FileVault off'
+    hint 'System Settings -> Privacy & Security -> FileVault'
+  }
+  csrutil status | grep enabled >/dev/null && ok 'System Integrity Protection' || bad 'SIP disabled: re-enable from Recovery (csrutil enable)'
+  grep -qs '^auth[[:space:]].*pam_tid.so' /etc/pam.d/sudo_local && ok 'Touch ID for sudo' || {
+    warn 'Touch ID for sudo off'
+    hint 'dot setup'
+  }
+  local drift
+  if drift="$("$DOTFILES/macos/defaults.sh" --check 2>&1)"; then
+    ok 'macOS defaults'
+  else
+    bad "macOS defaults: $(printf '%s\n' "$drift" | tail -1)"
+    hint 'dot macos --check shows each; dot macos applies them'
+  fi
+}
+
+doctor_dotfiles() {
+  step Dotfiles
+  local src rel missing=0 dirty ms
+  while IFS= read -r -d '' src; do
+    rel=${src#"$DOTFILES/home/"}
+    [ "$(readlink "$HOME/$rel" 2>/dev/null)" = "$src" ] || {
+      missing=$((missing + 1))
+      info "not linked: ~/$rel"
+    }
+  done < <(find "$DOTFILES/home" \( -type f -o -type l \) ! -name .DS_Store -print0)
+  [ $missing = 0 ] && ok 'home/ linked into ~' || {
+    bad "$missing file(s) not linked"
+    hint 'dot link'
+  }
+  while IFS= read -r -d '' src; do
+    rel=${src#"$DOTFILES/seed/"}
+    [ -e "$HOME/$rel" ] || {
+      bad "seed missing: ~/$rel"
+      hint 'dot link'
+    }
+  done < <(find "$DOTFILES/seed" -type f ! -name .DS_Store -print0)
+  dirty="$(git -C "$DOTFILES" status --porcelain -- home seed 2>/dev/null)"
+  if [ -n "$dirty" ]; then
+    warn 'tracked dotfiles changed in place (an installer edited a linked file?)'
+    printf '%s\n' "$dirty" | sed 's/^/      /'
+    hint "git -C $(tilde "$DOTFILES") diff: commit what belongs, move machine-only lines to ~/.config/bash/local.sh"
+  fi
+  ms="$("$HOMEBREW_PREFIX/bin/bash" -c 's=$EPOCHREALTIME; "$BASH" -lic exit </dev/null >/dev/null 2>&1; e=$EPOCHREALTIME; echo $(( (${e/./} - ${s/./}) / 1000 ))' 2>/dev/null || echo '?')"
+  if [ "$ms" != '?' ] && [ "$ms" -lt 400 ]; then ok "shell startup ${ms} ms"; else warn "shell startup ${ms} ms (target < 400)"; fi
+}
+
+doctor_identity() {
+  step '1Password, keys, git'
+  [ -d /Applications/1Password.app ] && ok '1Password app' || bad '1Password app missing'
+  if [ -S "$OP_AGENT_SOCK" ]; then ok '1Password SSH agent'; else
+    bad '1Password SSH agent socket missing'
+    hint '1Password -> Settings -> Developer -> Use the SSH agent'
+  fi
+  if have op && op account list 2>/dev/null | grep -F "$OP_ACCOUNT" >/dev/null; then ok "op CLI knows $OP_ACCOUNT"; else
+    bad "op CLI not connected to $OP_ACCOUNT"
+    hint '1Password -> Settings -> Developer -> Integrate with 1Password CLI'
+  fi
+  local title path mode actual
+  while read -r title path mode; do
+    path=${path/#\~/$HOME}
+    if [ ! -f "$path" ]; then
+      bad "vault file missing: $(tilde "$path")"
+      hint "dot vault pull $title"
+    elif actual="$(/usr/bin/stat -f %Lp "$path")" && [ "$actual" != "$mode" ]; then
+      bad "$(tilde "$path") is mode $actual, want $mode"
+      hint "chmod $mode $(tilde "$path")"
+    fi
+  done < <(vault_entries)
+  local keys
+  keys="$(grep -l 'PRIVATE KEY' "$HOME"/.ssh/* 2>/dev/null || true)"
+  if [ -n "$keys" ]; then
+    bad "private key on disk: $(printf '%s' "$keys" | tr '\n' ' ')"
+    hint 'import it into 1Password as an SSH Key item, keep only the .pub, delete the file'
+  else
+    ok 'no private keys in ~/.ssh'
+  fi
+  if [ ! -r "$IDENTITIES_LIB" ]; then
+    bad 'devbox-identities missing'
+    hint "git clone $DEVBOX_REPO $(tilde "$DEVBOX_DIR") && cd $(tilde "$DEVBOX_DIR") && ./bin/devbox agent install"
+  elif [ ! -r "$HOME/.config/devbox/identities.conf" ]; then
+    bad 'no identities.conf'
+    hint 'dot vault pull devbox/identities.conf'
+  else
+    local slug pub
+    for slug in $("$IDENTITIES_LIB" list); do
+      for pub in "id_$slug.pub" "signing_$slug.pub"; do
+        [ -f "$HOME/.ssh/$pub" ] || {
+          bad "missing ~/.ssh/$pub"
+          hint 'dot identities writes it from identities.conf'
+        }
+      done
+    done
+    # Subshell: its `die` paths must not end the doctor run.
+    if (cmd_identities --check) >/dev/null 2>&1; then ok 'git + ssh identity config rendered and current'; else
+      bad 'identity config missing or stale'
+      hint 'dot identities'
+    fi
+  fi
+  [ -f "$HOME/.ssh/devbox.pub" ] && ok 'devbox key: ~/.ssh/devbox.pub' || {
+    bad 'missing ~/.ssh/devbox.pub'
+    hint '1Password item "Devbox Laptop" -> public key -> ~/.ssh/devbox.pub'
+  }
+  # The real gh: in an agent session the devbox shim answers with its PAT.
+  if [ -x "$HOMEBREW_PREFIX/bin/gh" ] && env -u GH_TOKEN -u GH_CONFIG_DIR "$HOMEBREW_PREFIX/bin/gh" auth status --hostname github.com >/dev/null 2>&1; then ok 'gh signed in (human login)'; else
+    bad 'gh not signed in'
+    hint 'run yourself: gh auth login --hostname github.com --git-protocol ssh --web'
+  fi
+}
+
+doctor_devbox() {
+  step 'Tailscale & devbox'
+  local ts=/Applications/Tailscale.app/Contents/MacOS/Tailscale
+  if [ -x "$ts" ] && [ "$("$ts" status --json 2>/dev/null | jq -r .BackendState 2>/dev/null)" = Running ]; then ok 'Tailscale connected'; else
+    bad 'Tailscale not connected'
+    hint 'open Tailscale, log in, approve this device'
+  fi
+  [ -d "$DEVBOX_DIR/.git" ] && ok "devbox repo at $(tilde "$DEVBOX_DIR")" || {
+    bad 'devbox repo missing'
+    hint "git clone $DEVBOX_REPO $(tilde "$DEVBOX_DIR")"
+  }
+  local cmd want got
+  for cmd in omp claude; do
+    want="$HOME/.local/libexec/devbox-agent/launchers/$cmd"
+    got="$(fresh_which "$cmd" || true)"
+    if [ "$got" = "$want" ]; then ok "$cmd -> devbox launcher"; else
+      bad "$cmd resolves to ${got:-nothing}, not the devbox launcher"
+      hint "cd $(tilde "$DEVBOX_DIR") && ./bin/devbox agent install"
+    fi
+  done
+  if have herdr && herdr machine list 2>/dev/null | awk -F'\t' '$3 == "devbox"' | grep . >/dev/null; then ok 'herdr machine devbox'; else
+    bad 'herdr has no devbox machine'
+    hint 'ssh devbox true && herdr machine add devbox --label Devbox'
+  fi
+  info 'end-to-end keys, tokens and connections: ./bin/devbox doctor laptop (in the devbox repo)'
+}
+
+doctor_agents() {
+  step 'Agents & tools'
+  local bin
+  bin="$(real_omp)" && ok "omp $("$bin" --version 2>/dev/null | head -1)" || {
+    bad 'omp missing'
+    hint 'dot setup'
+  }
+  [ -x "$HOME/.local/bin/claude" ] && ok "claude $("$HOME/.local/bin/claude" --version 2>/dev/null | head -1)" || {
+    bad 'claude missing'
+    hint 'dot setup'
+  }
+  [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || bad 'agent-browser missing'
+  local pair skill
+  for pair in $SKILLS; do
+    skill=${pair#*:}
+    [ -d "$HOME/.agents/skills/$skill" ] || bad "skill $skill missing"
+  done
+  if have mise && mise exec -- node --version >/dev/null 2>&1; then ok "node $(mise exec -- node --version) via mise"; else
+    bad 'no Node from mise'
+    hint 'mise install'
+  fi
+  # A standalone installer's copy ahead of Homebrew's on the PATH runs while
+  # `brew upgrade` updates the one nobody runs.
+  local shadowed dir names
+  shadowed="$(fresh_shadowed)"
+  if [ -z "$shadowed" ]; then ok 'no other installs shadow Homebrew commands'; else
+    while read -r dir names; do
+      warn "$(tilde "$dir") shadows Homebrew's $names"
+    done < <(printf '%s\n' "$shadowed" | awk '{ a[$1] = a[$1] " " $2 } END { for (d in a) print d a[d] }')
+    hint 'uninstall those copies (or move them aside); Homebrew installs and upgrades its own'
+  fi
+  if brew services list 2>/dev/null | awk '$1 == "moshi-hook" {print $2}' | grep started >/dev/null; then
+    if moshi-hook status 2>/dev/null | grep 'status:[[:space:]]*paired' >/dev/null; then ok 'moshi-hook running and paired'; else
+      bad 'moshi-hook not paired'
+      hint 'Moshi app -> Settings -> Hooks -> token, then: moshi-hook pair --token <token>'
+    fi
+  else
+    bad 'moshi-hook service not running'
+    hint 'brew services start moshi-hook'
+  fi
+}
+
+cmd_doctor() {
+  doctor_system
+  doctor_dotfiles
+  doctor_identity
+  doctor_devbox
+  doctor_agents
+  printf '\n'
+  if [ $FAILS = 0 ]; then
+    printf '%s%s✓ all checks passed%s (%d warning(s))\n' "$B" "$GRN" "$RST" "$WARNS"
+  else
+    printf '%s%s✗ %d check(s) failing%s, %d warning(s)\n' "$B" "$RED" "$FAILS" "$RST" "$WARNS"
+    return 1
+  fi
+}
+
+main() {
+  local cmd="${1:-help}"
+  shift || true
+  case "$cmd" in
+  setup) cmd_setup "$@" ;;
+  agent) cmd_agent "$@" ;;
+  doctor) cmd_doctor "$@" ;;
+  link) cmd_link "$@" ;;
+  brew) cmd_brew "$@" ;;
+  macos) "$DOTFILES/macos/defaults.sh" "$@" ;;
+  identities) cmd_identities "$@" ;;
+  vault) cmd_vault "$@" ;;
+  update) cmd_update "$@" ;;
+  help | -h | --help) usage ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+  esac
+}
+
+main "$@"

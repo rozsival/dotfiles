@@ -1,0 +1,5 @@
+include "~/.nano/*.nanorc"
+set autoindent
+set tabsize 2
+set tabstospaces
+set softwrap

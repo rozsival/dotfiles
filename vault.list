@@ -1,0 +1,20 @@
+# Files that belong on this Mac but never in git. Each is a 1Password Document in
+# the vault `dot vault` uses (DOT_OP_VAULT, default "Workstation", account
+# DOT_OP_ACCOUNT, default my.1password.com). `dot vault push` uploads them from
+# a working machine; `dot vault pull` restores them on a new one.
+#
+# <document title>                  <path on this Mac>                                  <mode>
+
+devbox/identities.conf              ~/.config/devbox/identities.conf                    600
+devbox/secrets.env                  ~/.config/devbox/secrets.env                        600
+
+github-app/apitree-agents/app-id         ~/.config/apitree/apitree-agents/app-id             600
+github-app/apitree-agents/app.pem        ~/.config/apitree/apitree-agents/app.pem            600
+github-app/vitrozsivalcz-agents/app-id   ~/.config/vitrozsivalcz/vitrozsivalcz-agents/app-id 600
+github-app/vitrozsivalcz-agents/app.pem  ~/.config/vitrozsivalcz/vitrozsivalcz-agents/app.pem 600
+github-app/sitefellows-agents/app-id     ~/.config/sitefellows/sitefellows-agents/app-id     600
+github-app/sitefellows-agents/app.pem    ~/.config/sitefellows/sitefellows-agents/app.pem    600
+
+npm/.npmrc                          ~/.npmrc                                            600
+omp/models.yml                      ~/.omp/agent/models.yml                             600
+omp/.env                            ~/.omp/agent/.env                                   600

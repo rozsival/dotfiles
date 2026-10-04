@@ -1,0 +1,5 @@
+# SC2015: `check && ok ... || bad ...` is safe here - ok/warn/bad/hint always succeed.
+# SC2016: backticks and $vars inside single quotes are literal on purpose (messages, `bash -c` bodies).
+disable=SC2015,SC2016
+source-path=SCRIPTDIR
+external-sources=true

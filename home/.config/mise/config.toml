@@ -1,0 +1,11 @@
+# Global tool versions; projects pin their own via .nvmrc / .node-version / mise.toml.
+
+[tools]
+# Same major the devbox image pins (NODE_VERSION in devbox's Dockerfile).
+node = "24"
+
+[settings]
+# Honour .nvmrc and .node-version the way nvm did.
+idiomatic_version_file_enable_tools = ["node"]
+# Enable corepack on every Node install so pnpm/yarn come from packageManager.
+node.corepack = true

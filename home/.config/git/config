@@ -1,0 +1,76 @@
+# Shared git settings, read as "global" alongside ~/.gitconfig. Identity,
+# signing and the per-account includeIf chain live in ~/.gitconfig, which
+# `dot identities` renders from ~/.config/devbox/identities.conf: devbox's
+# `doctor laptop` reads them with `git config --global` (no include-following),
+# so they cannot sit behind an [include]. Agent sessions see neither file -
+# their launcher points GIT_CONFIG_GLOBAL at the devbox agent gitconfig.
+
+[init]
+	defaultBranch = main
+
+[alias]
+	# Abbreviated SHA, subject and graph of the latest 20 commits
+	l = log --pretty=oneline -n 20 --graph --abbrev-commit
+	s = status -s
+	tags = tag -l
+	remotes = remote -v
+	# Amend the staged changes into the latest commit, keeping its message
+	amend = commit --amend --reuse-message=HEAD
+	aliases = config --get-regexp ^alias\\.
+
+[core]
+	# Flag spaces before tabs and trailing whitespace
+	whitespace = space-before-tab,-indent-with-non-tab,trailing-space
+	# Make rebase safe on macOS (https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/)
+	trustctime = false
+	untrackedCache = true
+
+[apply]
+	whitespace = fix
+
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red
+	new = green
+
+[color "status"]
+	added = yellow
+	changed = green
+	untracked = cyan
+
+[diff]
+	renames = copies
+
+[merge]
+	log = true
+	# Show the common ancestor in conflict hunks; agents resolve conflicts better with it.
+	conflictStyle = zdiff3
+
+[fetch]
+	prune = true
+
+[pull]
+	rebase = true
+
+[push]
+	default = simple
+	followTags = true
+	# First push of a worktrunk branch needs no -u.
+	autoSetupRemote = true
+
+[help]
+	# Ask before running a guessed command: agents run git non-interactively,
+	# and a silently "corrected" command is worse than an error.
+	autocorrect = prompt
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

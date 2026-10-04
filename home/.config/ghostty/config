@@ -1,0 +1,9 @@
+# Ghostty only hosts herdr here; keep it plain. Reference: `ghostty +show-config --default --docs`.
+
+font-size = 13
+
+# Left Option is Alt for TUIs (herdr, OMP, readline word motions); right Option
+# still types accented characters.
+macos-option-as-alt = left
+
+window-save-state = always
