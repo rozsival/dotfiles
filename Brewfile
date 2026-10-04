@@ -1,12 +1,15 @@
 # Applied by `dot` via `brew bundle --file Brewfile`. App Store apps: Brewfile.mas.
 # OMP and Claude Code ship their own installers and are intentionally absent.
 
-# Taps (only where the formula/cask is not in homebrew-core/cask)
+# Taps (only where the formula/cask is not in homebrew-core/cask). Homebrew 7
+# refuses to load code from a third-party tap until it is trusted, so each entry
+# from one is fully qualified and `trusted: true`: that trusts the one formula,
+# not the whole tap, and `brew bundle cleanup --force` resets Homebrew's trust
+# store to exactly what this file declares.
 tap "azure/kubelogin"
 tap "hashicorp/tap"
 tap "mongodb/brew"
 tap "rjyo/moshi"
-tap "steipete/tap"
 tap "superhq-ai/tap"
 
 # Shell & core CLI
@@ -57,8 +60,8 @@ cask "claude" # desktop app only; Claude Code uses its own installer
 cask "codexbar"
 brew "herdr" # in homebrew-core; replaces the standalone binary in ~/.local/bin
 brew "llmfit" # homebrew-core now ships it, so the alexsjones tap is no longer needed
-brew "superhq-ai/tap/shuru"
-brew "rjyo/moshi/moshi-hook"
+brew "superhq-ai/tap/shuru", trusted: true
+brew "rjyo/moshi/moshi-hook", trusted: true
 
 # Languages & runtimes
 brew "rustup" # keg-only: run `rustup default stable` once to get cargo/rustc shims
@@ -69,13 +72,13 @@ brew "openjdk"
 
 # Cloud, Kubernetes & DB clients
 brew "azure-cli"
-brew "azure/kubelogin/kubelogin"
+brew "azure/kubelogin/kubelogin", trusted: true
 brew "helm"
 brew "k9s"
 brew "kubectx"
-brew "hashicorp/tap/terraform"
+brew "hashicorp/tap/terraform", trusted: true
 brew "mongosh"
-brew "mongodb/brew/mongodb-database-tools"
+brew "mongodb/brew/mongodb-database-tools", trusted: true
 cask "gcloud-cli" # replaces ~/google-cloud-sdk (formerly the google-cloud-sdk cask)
 cask "freelens"
 cask "docker-desktop"

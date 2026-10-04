@@ -52,6 +52,10 @@ setup/PROMPT.md         first message of the guided-setup session
    step macOS refuses fails instead of hanging; Homebrew's rollback of a cask that ships two apps would
    delete the first, already adopted app from /Applications. Check a new cask with
    `brew info --cask --json=v2 <name> | jq '[.casks[0].artifacts[] | .app? // empty] | length'`.
+9. **Third-party tap entries are fully qualified and `trusted: true`.** Homebrew 7 refuses to load tap code
+   nobody trusted, and `brew bundle cleanup --force` resets its trust store to what the Brewfile declares, so
+   trust lives in the Brewfile, per formula or cask (`brew "rjyo/moshi/moshi-hook", trusted: true`), never
+   per tap and never via a one-off `brew trust`. Prefer homebrew-core/cask whenever they ship the package.
 
 ## Working in an agent session
 
