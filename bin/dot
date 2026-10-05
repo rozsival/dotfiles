@@ -758,6 +758,19 @@ doctor_agents() {
     bad 'moshi-hook service not running'
     hint 'brew services start moshi-hook'
   fi
+  # Docker Desktop at login races launchd's com.docker.socket to recreate
+  # /var/run/docker.sock and asks for an admin password on every boot. Its
+  # settings file is TCC-protected; the backend log of the last start is not.
+  local dlog="$HOME/Library/Containers/com.docker.docker/Data/log/host/com.docker.backend.log" sock
+  if [ -r "$dlog" ]; then
+    sock="$(grep -o 'should enable default docker socket: *[a-z]*' "$dlog" | tail -1 | awk '{print $NF}')"
+    if [ "$sock" = true ]; then
+      warn 'Docker Desktop default socket on (admin prompt at every boot)'
+      hint 'Docker Desktop -> Settings -> Advanced -> untick "Allow the default Docker socket to be used"'
+    elif [ "$sock" = false ]; then
+      ok 'Docker Desktop default socket off'
+    fi
+  fi
 }
 
 cmd_doctor() {

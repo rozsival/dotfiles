@@ -7,3 +7,8 @@ font-size = 13
 macos-option-as-alt = left
 
 window-save-state = always
+
+# Hosts without Ghostty's terminfo (the devbox) reject TERM=xterm-ghostty: `ssh`
+# from a Ghostty shell installs it there with infocmp | tic (cached per host),
+# falling back to TERM=xterm-256color when that fails.
+shell-integration-features = ssh-env,ssh-terminfo
