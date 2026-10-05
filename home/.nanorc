@@ -1,4 +1,15 @@
-include "~/.nano/*.nanorc"
+# Syntaxes shipped with the Brewfile's nano, so they always match its version.
+include "/opt/homebrew/share/nano/*.nanorc"
+
+# The bundled set has no INI syntax; identities.conf and friends are INI.
+syntax ini "\.(ini|conf|cfg)$"
+comment "#"
+color brightblue "^[[:blank:]]*[^][[:blank:]#;=][^=]*="
+color yellow ""[^"]*""
+color magenta "<?[[:alnum:].%_+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}>?"
+color brightgreen "^[[:blank:]]*\[[^]]+\]"
+color cyan "^[[:blank:]]*[#;].*"
+
 set autoindent
 set tabsize 2
 set tabstospaces
