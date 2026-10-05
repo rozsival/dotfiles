@@ -20,7 +20,7 @@ for sudo, macOS defaults. Re-run a single piece (`dot brew`, `dot link`, `dot ma
 - **The person does**: anything in a browser or GUI, every sign-in, every approval (1Password, sudo/Touch
   ID, macOS permission dialogs), and any command that handles a credential (`gh auth login`,
   `moshi-hook pair --token`, `herdr machine add`, `claude` `/login`). Also every `dot` command that can
-  prompt for sudo - `dot setup`, `dot brew`, `dot update`, `dot macos` (apply): an agent shell has no
+  prompt for sudo - `dot setup`, `dot brew`, `dot sync`, `dot update`, `dot macos` (apply): an agent shell has no
   terminal, so Homebrew steps that need sudo fail (dot sets `HOMEBREW_NO_SUDO` there) and dot's own sudo
   calls wait on a Touch ID prompt no one sees. Give the exact command or click path,
   wait for confirmation, then verify with a read-only check.

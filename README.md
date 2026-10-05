@@ -57,9 +57,9 @@ bin/dot doctor
 (`dot brew`, `dot link`, `dot macos`) is faster than running it all again.
 
 > [!WARNING]
-> Run anything that can prompt for sudo or Touch ID in your own terminal: `dot setup`, `dot brew`, `dot update` and
-> `dot macos`. An agent's shell has no TTY, so Homebrew's sudo fallback fails there and `dot`'s own sudo waits on a
-> prompt no one sees.
+> Run anything that can prompt for sudo or Touch ID in your own terminal: `dot setup`, `dot brew`, `dot sync`,
+> `dot update` and `dot macos`. An agent's shell has no TTY, so Homebrew's sudo fallback fails there and `dot`'s own
+> sudo waits on a prompt no one sees.
 
 ## 🔄 How it works
 
@@ -102,6 +102,7 @@ secret's value.
 | `dot setup`                               | Everything automatable; idempotent                                                                 |
 | `dot agent [omp\|claude]`                 | Starts the guided setup in an agent harness (default: OMP)                                         |
 | `dot doctor`                              | Checks the whole machine and exits 1 while anything fails                                          |
+| `dot sync`                                | Fast-forwards this repo from origin, then `dot link`, `dot brew` and `dot macos --check`           |
 | `dot update`                              | Upgrades Homebrew, mise, OMP, Claude Code, skills and moshi-hook; clears completion caches         |
 | `dot link [--dry-run]`                    | Symlinks `home/` into `~`, backing up what it replaces; copies `seed/` where absent                |
 | `dot brew [--mas\|--check\|--cleanup]`    | `brew bundle` for `Brewfile` or `Brewfile.mas`; lists what is missing, or installed but undeclared |
@@ -122,6 +123,11 @@ to
 | Seeded   | `seed/`                       | Copied once if absent; from then on the tool owns it                 | OMP preset (rsynced to the devbox, so it can't be a symlink), herdr           |
 | Rendered | nowhere in git                | `dot identities` builds them from `~/.config/devbox/identities.conf` | `~/.gitconfig`, GitHub SSH blocks, `allowed_signers`, `*.pub`                 |
 | Secret   | 1Password `Workstation` vault | `dot vault pull`/`push`, listed in [`vault.list`](vault.list)        | `identities.conf`, `secrets.env`, GitHub App keys, `.npmrc`, OMP `models.yml` |
+
+Changes travel through git. An edit to a tracked file is already in the repo: commit and push it. Another Mac
+picks it up with `dot sync`, which refuses to run on uncommitted changes. `dot doctor` warns when the repo is ahead
+of or behind origin. Seeded files never sync after the first copy, secrets go through `dot vault`, and `dot macos`
+applies the defaults drift that `dot sync` reports.
 
 ## 🧭 Design notes
 

@@ -17,7 +17,7 @@ _dot_vault_titles() {
 _dot() {
   local cur=${COMP_WORDS[COMP_CWORD]} words=''
   case "$COMP_CWORD:${COMP_WORDS[1]-}" in
-  1:*) words='setup agent doctor link brew macos identities vault update help' ;;
+  1:*) words='setup agent doctor link brew macos identities vault sync update help' ;;
   2:agent) words='omp claude' ;;
   2:link) words='--dry-run' ;;
   2:brew) words='--mas --check --cleanup' ;;

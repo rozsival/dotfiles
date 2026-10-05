@@ -81,6 +81,7 @@ Commands:
   vault <status|pull|push> [--force] [title...]
                      Files listed in vault.list, kept as 1Password Documents
                      (account $OP_ACCOUNT, vault $OP_VAULT)
+  sync               Pull this repo (fast-forward only), then link, brew bundle and check macOS defaults
   update             Upgrade Homebrew packages, mise tools, OMP, Claude Code, skills, moshi-hook
 EOF
 }
@@ -506,6 +507,28 @@ cmd_update() {
   ok 'completion caches cleared; they rebuild in the next shell'
 }
 
+# Brings this Mac up to what origin has. Refuses a dirty tree: home/ files are
+# live symlink targets, so a merge or stash must never happen behind your back.
+cmd_sync() {
+  local dirty drift
+  step 'Dotfiles repo'
+  # Untracked files don't block a fast-forward; git refuses one that would overwrite them.
+  dirty="$(git -C "$DOTFILES" status --porcelain --untracked-files=no)"
+  [ -z "$dirty" ] || die "uncommitted changes in $(tilde "$DOTFILES"): commit and push them first"
+  git -C "$DOTFILES" pull --ff-only
+  step Links
+  cmd_link
+  step Homebrew
+  cmd_brew
+  step 'macOS defaults'
+  if drift="$("$DOTFILES/macos/defaults.sh" --check 2>&1)"; then
+    ok 'macOS defaults'
+  else
+    printf '%s\n' "$drift"
+    warn 'macOS defaults drift: dot macos applies them'
+  fi
+}
+
 # -- agent --------------------------------------------------------------------
 
 cmd_agent() {
@@ -624,8 +647,36 @@ doctor_dotfiles() {
     printf '%s\n' "$dirty" | sed 's/^/      /'
     hint "git -C $(tilde "$DOTFILES") diff: commit what belongs, move machine-only lines to ~/.config/bash/local.sh"
   fi
+  doctor_upstream
   ms="$("$HOMEBREW_PREFIX/bin/bash" -c 's=$EPOCHREALTIME; "$BASH" -lic exit </dev/null >/dev/null 2>&1; e=$EPOCHREALTIME; echo $(( (${e/./} - ${s/./}) / 1000 ))' 2>/dev/null || echo '?')"
   if [ "$ms" != '?' ] && [ "$ms" -lt 400 ]; then ok "shell startup ${ms} ms"; else warn "shell startup ${ms} ms (target < 400)"; fi
+}
+
+# Unpushed commits stay on this Mac only; unpulled ones never reach it.
+doctor_upstream() {
+  local counts ahead behind
+  # Doctor runs from agent shells too: fail instead of waiting on a prompt no one sees.
+  # An inherited GIT_SSH_COMMAND wins: devbox launchers set one to keep agents off your SSH keys.
+  if ! GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes}" git -C "$DOTFILES" fetch --quiet 2>/dev/null; then
+    warn 'could not fetch the dotfiles repo from origin'
+    return
+  fi
+  if ! counts="$(git -C "$DOTFILES" rev-list --left-right --count 'HEAD...@{upstream}' 2>/dev/null)"; then
+    warn 'dotfiles branch has no upstream'
+    hint "git -C $(tilde "$DOTFILES") branch --set-upstream-to origin/main"
+    return
+  fi
+  ahead=${counts%%[[:space:]]*}
+  behind=${counts##*[[:space:]]}
+  [ "$ahead" = 0 ] && [ "$behind" = 0 ] && ok 'dotfiles repo in sync with origin'
+  [ "$ahead" = 0 ] || {
+    warn "dotfiles repo $ahead commit(s) ahead of origin"
+    hint "git -C $(tilde "$DOTFILES") push"
+  }
+  [ "$behind" = 0 ] || {
+    warn "dotfiles repo $behind commit(s) behind origin"
+    hint 'dot sync'
+  }
 }
 
 doctor_identity() {
@@ -803,6 +854,7 @@ main() {
   identities) cmd_identities "$@" ;;
   vault) cmd_vault "$@" ;;
   update) cmd_update "$@" ;;
+  sync) cmd_sync "$@" ;;
   help | -h | --help) usage ;;
   *)
     usage >&2

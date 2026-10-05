@@ -14,7 +14,7 @@ OMP / Claude Code locally through devbox's launchers.
 
 ```
 install.sh              fresh-Mac entry: CLT, clone, exec bin/dot setup
-bin/dot                 the CLI (setup, agent, doctor, link, brew, macos, identities, vault, update)
+bin/dot                 the CLI (setup, agent, doctor, link, brew, macos, identities, vault, sync, update)
 Brewfile, Brewfile.mas  packages / App Store apps
 home/                   symlinked file-by-file into ~ by `dot link`
 seed/                   copied into ~ only when absent (tool-owned afterwards)
