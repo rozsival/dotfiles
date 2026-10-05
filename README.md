@@ -192,7 +192,7 @@ Rules for agents changing this repo live in [`AGENTS.md`](AGENTS.md).
 
 | Item       | Details                                                                                     |
 |------------|---------------------------------------------------------------------------------------------|
-| Maintainer | [@rozsival](https://github.com/rozsival)                                                    |
+| Maintainer | [@rozsival](https://github.com/rozsival) (see [`CODEOWNERS`](CODEOWNERS))                   |
 | Issues     | [GitHub Issues](https://github.com/rozsival/dotfiles/issues)                                |
 | Companion  | [devbox](https://github.com/rozsival/devbox), the remote agent container this laptop drives |
 | License    | [MIT](LICENSE-MIT.txt)                                                                      |
