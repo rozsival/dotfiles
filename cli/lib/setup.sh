@@ -23,6 +23,17 @@ setup_runtimes() {
 }
 
 setup_agents() {
+  # OMP's preset is devbox's home/.omp/agent/config.yml, the one the devbox
+  # runs too. It lands before OMP is installed, so the guided session `dot agent`
+  # starts already has its bash.patterns guardrail; `devbox agent install` then
+  # finds the file and leaves it alone.
+  [ -d "$DEVBOX_DIR/.git" ] || git clone "$DEVBOX_REPO" "$DEVBOX_DIR"
+  local omp_config="$HOME/.omp/agent/config.yml"
+  if [ ! -e "$omp_config" ]; then
+    mkdir -p "${omp_config%/*}"
+    cp "$DEVBOX_DIR/home/.omp/agent/config.yml" "$omp_config"
+  fi
+  ok "OMP preset ($(tilde "$omp_config"))"
   real_omp >/dev/null || curl -fsSL https://omp.sh/install.sh | sh
   ok "omp $("$(real_omp)" --version 2>/dev/null | head -1)"
   [ -x "$HOME/.local/bin/claude" ] || curl -fsSL https://claude.ai/install.sh | bash

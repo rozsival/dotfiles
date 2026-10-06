@@ -42,9 +42,10 @@ mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettie
 3. **Ownership boundaries.** Never manage `~/.config/devbox/**` (except restoring `identities.conf` and
    `secrets.env` via `vault.list`), `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities`,
    `~/.local/bin/devbox*`, `~/.claude/settings.json` (moshi-hook and other tools rewrite its hooks).
-   `~/.omp/agent/config.yml` is a seed, never a symlink: `devbox sync omp` rsyncs it and a symlink would
-   arrive dangling. Its `bash:` block is a copy of devbox's `home/.omp/agent/config.yml`: change it there
-   first, then mirror it into `seed/` (`dot doctor` compares both).
+   `~/.omp/agent/config.yml` is devbox's `home/.omp/agent/config.yml`, the one preset this Mac and the devbox
+   share: `dot setup` copies it when absent (before OMP first starts) and OMP owns the live file afterwards.
+   Never copy it into this repo: a change goes into devbox's template, then `devbox sync omp` (`dot doctor`
+   compares the live file with the template).
 4. **Identity is rendered, not tracked.** `user.*`, `gpg.*`, `commit/tag.gpgsign` and `includeIf` live in
    the `~/.gitconfig` that `dot identities` renders from `~/.config/devbox/identities.conf` via devbox's
    own library. Never put them in `home/.config/git/config`: `devbox doctor laptop` reads

@@ -2,9 +2,7 @@
 
 # Every file under home/ becomes a symlink at the same path under ~ (files, not
 # directories, so tools can keep their own state next to them). seed/ files are
-# copied once and then owned by the machine: they are rewritten by the tools
-# themselves (OMP's config is also rsync'd to the devbox, where a symlink would
-# arrive dangling).
+# copied once and then owned by the machine: the tools rewrite them themselves.
 # $1: 1 for a dry run.
 link_home() {
   local dry="${1:-0}" src rel dst backup='' linked=0 changed=0 manifest="$STATE_DIR/links" current

@@ -26,7 +26,7 @@ commands:
     group: Setup
     help: |-
       Everything automatable; idempotent.
-      Brewfile, Homebrew bash as login shell, `dot link`, mise and rustup runtimes, gcloud components, OMP, Claude Code, agent skills, moshi-hook, Touch ID for sudo, macOS defaults. install.sh runs it once Xcode CLT, Homebrew and Homebrew bash exist. Run it in your own terminal: it asks for sudo.
+      Brewfile, Homebrew bash as login shell, `dot link`, mise and rustup runtimes, gcloud components, devbox clone and its OMP preset, OMP, Claude Code, agent skills, moshi-hook, Touch ID for sudo, macOS defaults. install.sh runs it once Xcode CLT, Homebrew and Homebrew bash exist. Run it in your own terminal: it asks for sudo.
 
   - name: agent
     group: Setup

@@ -75,8 +75,8 @@ flowchart LR
 ```
 
 **Automated** by `install.sh`: Xcode CLT → clone → Homebrew and its bash, which `bin/dot` runs on. Then by `dot setup`:
-the [`Brewfile`](Brewfile) → Homebrew bash as the login shell → `dot link` → mise Node and rustup → OMP, Claude Code,
-agent skills and moshi-hook → Touch ID for sudo → macOS defaults.
+the [`Brewfile`](Brewfile) → Homebrew bash as the login shell → `dot link` → mise Node and rustup → the devbox clone and
+its OMP preset, OMP, Claude Code, agent skills and moshi-hook → Touch ID for sudo → macOS defaults.
 
 **Guided** by `dot agent`: the harness starts with [`setup/PROMPT.md`](setup/PROMPT.md) and the
 [`workstation-setup`](.agents/skills/workstation-setup/SKILL.md) skill, runs `dot doctor`, and takes the failures in
@@ -132,7 +132,7 @@ commands, options, allowed values and `vault.list` titles: the completion asks `
 | Kind     | Lives in                      | Mechanism                                                            | Examples                                                                      |
 | -------- | ----------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Tracked  | `home/`                       | Symlinked file by file by `dot link`; editing in `~` edits the repo  | bash, shared git config, `~/.ssh/config`, Ghostty, mise                       |
-| Seeded   | `seed/`                       | Copied once if absent; from then on the tool owns it                 | OMP preset (rsynced to the devbox, so it can't be a symlink), herdr           |
+| Seeded   | `seed/`                       | Copied once if absent; from then on the tool owns it                 | herdr                                                                         |
 | Rendered | nowhere in git                | `dot identities` builds them from `~/.config/devbox/identities.conf` | `~/.gitconfig`, GitHub SSH blocks, `allowed_signers`, `*.pub`                 |
 | Secret   | 1Password `Workstation` vault | `dot vault pull`/`push`, listed in [`vault.list`](vault.list)        | `identities.conf`, `secrets.env`, GitHub App keys, `.npmrc`, OMP `models.yml` |
 
@@ -174,8 +174,8 @@ devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**`, `~/.local
 1Password. It owns what devbox leaves to the laptop: `~/.ssh/config` (tracked), the files `dot identities` renders
 (`~/.gitconfig`, `~/.config/git/identities/*`, `~/.ssh/config.d/identities`, the `id_*`/`signing_*.pub` selectors,
 `allowed_signers`) and the PATH line that puts the launchers first. devbox's laptop docs describe those files as
-hand-written; here they are not. The OMP preset is seeded from `seed/`, but its `bash:` guardrail is devbox's
-(`home/.omp/agent/config.yml`): `dot doctor` warns when either copy drifts from it.
+hand-written; here they are not. The OMP preset is devbox's (`home/.omp/agent/config.yml`), the same file the devbox
+runs: `dot setup` copies it before OMP first starts, and `dot doctor` warns when the live file drifts from it.
 
 ## 📁 Repository layout
 

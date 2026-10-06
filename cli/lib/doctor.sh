@@ -265,18 +265,18 @@ doctor_agents() {
       hint 'codex login'
     fi
   fi
-  # OMP's bash.patterns guardrail is devbox's (home/.omp/agent/config.yml);
-  # the seed and the live file carry copies, and `devbox sync omp` pushes the
-  # live one over the devbox's. Neither installer merges into an existing file.
-  local tpl="$DEVBOX_DIR/home/.omp/agent/config.yml" copy
-  if [ -r "$tpl" ]; then
-    for copy in "$DOTFILES/seed/.omp/agent/config.yml" "$HOME/.omp/agent/config.yml"; do
-      [ -r "$copy" ] || continue
-      if [ "$(omp_guardrail "$copy")" = "$(omp_guardrail "$tpl")" ]; then ok "OMP guardrail current: $(tilde "$copy")"; else
-        warn "OMP guardrail in $(tilde "$copy") differs from devbox's"
-        hint "replace its bash: block with the one in $(tilde "$tpl")"
-      fi
-    done
+  # One OMP preset for this Mac and the devbox: devbox's home/.omp/agent/config.yml.
+  # OMP owns the live file and requotes it, so the two compare as data. A change
+  # made in OMP goes into the template, then `devbox sync omp` takes it across.
+  local tpl="$DEVBOX_DIR/home/.omp/agent/config.yml" live="$HOME/.omp/agent/config.yml"
+  if [ ! -r "$live" ]; then
+    bad "no $(tilde "$live")"
+    hint "cp $(tilde "$tpl") $(tilde "$live")"
+  elif [ -r "$tpl" ] && have yq; then
+    if [ "$(omp_preset "$live")" = "$(omp_preset "$tpl")" ]; then ok "OMP preset matches devbox's"; else
+      warn "OMP preset in $(tilde "$live") differs from devbox's $(tilde "$tpl")"
+      hint "a change made in OMP: cp it over the template, make fmt and commit in devbox, then devbox sync omp; a change in devbox: cp the template over it"
+    fi
   fi
   [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || bad 'agent-browser missing'
   local pair skill
@@ -322,8 +322,8 @@ doctor_agents() {
   fi
 }
 
-# The top-level `bash:` block of an OMP config, without comments, blank lines
-# or quotes: prettier and OMP each requote YAML scalars their own way.
-omp_guardrail() {
-  awk '/^bash:/ { on = 1; print; next } on && /^[^[:space:]#]/ { on = 0 } on && !/^[[:space:]]*(#|$)/' "$1" | tr -d "\"'"
+# An OMP config as canonical JSON: prettier and OMP each quote and lay out YAML
+# their own way, and comments are not settings.
+omp_preset() {
+  yq -o=json -I=0 'sort_keys(..)' "$1" 2>/dev/null
 }

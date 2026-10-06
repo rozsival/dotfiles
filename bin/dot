@@ -82,7 +82,7 @@ dot_usage() {
 dot_setup_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot setup\n\n"
-    printf "  Everything automatable; idempotent.\n  Brewfile, Homebrew bash as login shell, \`dot link\`, mise and rustup runtimes,\n  gcloud components, OMP, Claude Code, agent skills, moshi-hook, Touch ID for\n  sudo, macOS defaults. install.sh runs it once Xcode CLT, Homebrew and Homebrew\n  bash exist. Run it in your own terminal: it asks for sudo.\n\n"
+    printf "  Everything automatable; idempotent.\n  Brewfile, Homebrew bash as login shell, \`dot link\`, mise and rustup runtimes,\n  gcloud components, devbox clone and its OMP preset, OMP, Claude Code, agent\n  skills, moshi-hook, Touch ID for sudo, macOS defaults. install.sh runs it once\n  Xcode CLT, Homebrew and Homebrew bash exist. Run it in your own terminal: it\n  asks for sudo.\n\n"
   else
     printf "dot setup - Everything automatable; idempotent.\n\n"
   fi
@@ -807,18 +807,18 @@ doctor_agents() {
       hint 'codex login'
     fi
   fi
-  # OMP's bash.patterns guardrail is devbox's (home/.omp/agent/config.yml);
-  # the seed and the live file carry copies, and `devbox sync omp` pushes the
-  # live one over the devbox's. Neither installer merges into an existing file.
-  local tpl="$DEVBOX_DIR/home/.omp/agent/config.yml" copy
-  if [ -r "$tpl" ]; then
-    for copy in "$DOTFILES/seed/.omp/agent/config.yml" "$HOME/.omp/agent/config.yml"; do
-      [ -r "$copy" ] || continue
-      if [ "$(omp_guardrail "$copy")" = "$(omp_guardrail "$tpl")" ]; then ok "OMP guardrail current: $(tilde "$copy")"; else
-        warn "OMP guardrail in $(tilde "$copy") differs from devbox's"
-        hint "replace its bash: block with the one in $(tilde "$tpl")"
-      fi
-    done
+  # One OMP preset for this Mac and the devbox: devbox's home/.omp/agent/config.yml.
+  # OMP owns the live file and requotes it, so the two compare as data. A change
+  # made in OMP goes into the template, then `devbox sync omp` takes it across.
+  local tpl="$DEVBOX_DIR/home/.omp/agent/config.yml" live="$HOME/.omp/agent/config.yml"
+  if [ ! -r "$live" ]; then
+    bad "no $(tilde "$live")"
+    hint "cp $(tilde "$tpl") $(tilde "$live")"
+  elif [ -r "$tpl" ] && have yq; then
+    if [ "$(omp_preset "$live")" = "$(omp_preset "$tpl")" ]; then ok "OMP preset matches devbox's"; else
+      warn "OMP preset in $(tilde "$live") differs from devbox's $(tilde "$tpl")"
+      hint "a change made in OMP: cp it over the template, make fmt and commit in devbox, then devbox sync omp; a change in devbox: cp the template over it"
+    fi
   fi
   [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || bad 'agent-browser missing'
   local pair skill
@@ -864,10 +864,10 @@ doctor_agents() {
   fi
 }
 
-# The top-level `bash:` block of an OMP config, without comments, blank lines
-# or quotes: prettier and OMP each requote YAML scalars their own way.
-omp_guardrail() {
-  awk '/^bash:/ { on = 1; print; next } on && /^[^[:space:]#]/ { on = 0 } on && !/^[[:space:]]*(#|$)/' "$1" | tr -d "\"'"
+# An OMP config as canonical JSON: prettier and OMP each quote and lay out YAML
+# their own way, and comments are not settings.
+omp_preset() {
+  yq -o=json -I=0 'sort_keys(..)' "$1" 2>/dev/null
 }
 
 # Renders the laptop-side identity config devbox leaves to you (devbox
@@ -967,9 +967,7 @@ identities_sync() {
 
 # Every file under home/ becomes a symlink at the same path under ~ (files, not
 # directories, so tools can keep their own state next to them). seed/ files are
-# copied once and then owned by the machine: they are rewritten by the tools
-# themselves (OMP's config is also rsync'd to the devbox, where a symlink would
-# arrive dangling).
+# copied once and then owned by the machine: the tools rewrite them themselves.
 # $1: 1 for a dry run.
 link_home() {
   local dry="${1:-0}" src rel dst backup='' linked=0 changed=0 manifest="$STATE_DIR/links" current
@@ -1079,6 +1077,17 @@ setup_runtimes() {
 }
 
 setup_agents() {
+  # OMP's preset is devbox's home/.omp/agent/config.yml, the one the devbox
+  # runs too. It lands before OMP is installed, so the guided session `dot agent`
+  # starts already has its bash.patterns guardrail; `devbox agent install` then
+  # finds the file and leaves it alone.
+  [ -d "$DEVBOX_DIR/.git" ] || git clone "$DEVBOX_REPO" "$DEVBOX_DIR"
+  local omp_config="$HOME/.omp/agent/config.yml"
+  if [ ! -e "$omp_config" ]; then
+    mkdir -p "${omp_config%/*}"
+    cp "$DEVBOX_DIR/home/.omp/agent/config.yml" "$omp_config"
+  fi
+  ok "OMP preset ($(tilde "$omp_config"))"
   real_omp >/dev/null || curl -fsSL https://omp.sh/install.sh | sh
   ok "omp $("$(real_omp)" --version 2>/dev/null | head -1)"
   [ -x "$HOME/.local/bin/claude" ] || curl -fsSL https://claude.ai/install.sh | bash
