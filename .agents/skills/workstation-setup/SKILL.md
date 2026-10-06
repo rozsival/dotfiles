@@ -111,8 +111,10 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 
 ## Phase 7 - agents and phone
 
-- Claude Code: the person runs `claude` and `/login`. Codex: `codex login`. (This OMP session is already
-  logged in.)
+- The harness that runs this session is already signed in: `dot agent` needs that first (README quick
+  start). The other one: Claude Code - the person runs `claude` and `/login`; OMP - `omp login anthropic`
+  (Claude Pro/Max). Codex: `codex login`. Verify: doctor's `omp signed in to Anthropic` and
+  `claude signed in (/login)`.
 - Moshi for Mac has no cask: the person downloads it from https://getmoshi.app. Pairing: Moshi app →
   Settings → Hooks → token, then the person runs `moshi-hook pair --token <token>`. Verify:
   `moshi-hook status` shows `status: paired`; `moshi-hook doctor`.

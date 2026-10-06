@@ -46,8 +46,10 @@ the `Workstation` vault.
 #    (bash -c, not curl | bash: the installers it starts read the terminal)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rozsival/dotfiles/main/install.sh)"
 
-# 2. Guided: open Ghostty (it starts the new login shell), then
-cd ~/projects/rozsival/dotfiles && bin/dot agent   # or: bin/dot agent claude
+# 2. Guided: open Ghostty (it starts the new login shell), sign the harness in to your subscription, then start it
+cd ~/projects/rozsival/dotfiles
+omp login anthropic   # Claude Pro/Max in the browser; for Claude Code instead: run `claude`, `/login`, `/exit`
+bin/dot agent         # or: bin/dot agent claude
 
 # 3. Done when this passes
 bin/dot doctor
@@ -81,6 +83,12 @@ agent skills and moshi-hook → Touch ID for sudo → macOS defaults.
 phase order. It tells you exactly what to click or type, waits for you, then checks the result itself. It never reads a
 secret's value.
 
+> [!NOTE]
+> The harness needs a model before it can read the prompt, so sign it in first, in your own terminal. OMP:
+> `omp login anthropic` opens the browser for your Claude Pro/Max subscription; its preset (`modelRoles`) uses only
+> Anthropic models. Run `omp login` without an argument to pick another provider. Claude Code: run `claude`, complete
+> `/login`, then `/exit`. The other harness signs in later, in phase 7.
+
 | #  | Phase              | What happens                                                                         |
 |----|--------------------|--------------------------------------------------------------------------------------|
 | 1  | 1Password          | Sign in, Touch ID on, SSH agent and CLI integration on                               |
@@ -89,7 +97,7 @@ secret's value.
 | 4  | git & ssh identity | `dot identities` renders `~/.gitconfig`, SSH blocks and `allowed_signers`            |
 | 5  | GitHub             | `gh auth login`, SSH and signing checks, repos switched to SSH remotes               |
 | 6  | Tailscale & devbox | Tailnet login, `herdr machine add devbox`, `devbox doctor laptop`                    |
-| 7  | Agents & phone     | Claude Code `/login`, Moshi pairing                                                  |
+| 7  | Agents & phone     | Login for the harness `dot agent` didn't start, Moshi pairing                        |
 | 8  | Apps               | `dot brew`, App Store apps via `dot brew --mas`, JetBrains IDEs, first-run approvals |
 | 9  | Cloud & registries | `gcloud`, `az`, `glab` logins, only for what you use                                 |
 | 10 | Finish             | `dot doctor` prints `✓ all checks passed`                                           |

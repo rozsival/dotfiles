@@ -229,10 +229,26 @@ doctor_agents() {
     bad 'omp missing'
     hint 'dot setup'
   }
+  # Exit status only: the token itself must never reach the output. Skipped
+  # without omp: 'omp missing' already names the fix.
+  if [ -n "$bin" ]; then
+    if "$bin" token anthropic </dev/null >/dev/null 2>&1; then ok 'omp signed in to Anthropic'; else
+      bad 'omp not signed in to Anthropic'
+      hint 'omp login anthropic   (Claude Pro/Max subscription)'
+    fi
+  fi
   [ -x "$HOME/.local/bin/claude" ] && ok "claude $("$HOME/.local/bin/claude" --version 2>/dev/null | head -1)" || {
     bad 'claude missing'
     hint 'dot setup'
   }
+  # /login records the account (no secret) in ~/.claude.json; the token itself
+  # sits in the Keychain, which doctor does not touch.
+  if [ -x "$HOME/.local/bin/claude" ]; then
+    if jq -e '.oauthAccount | type == "object"' "$HOME/.claude.json" >/dev/null 2>&1; then ok 'claude signed in (/login)'; else
+      bad 'claude not signed in'
+      hint 'claude, then /login and /exit'
+    fi
+  fi
   [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || bad 'agent-browser missing'
   local pair skill
   for pair in $SKILLS; do

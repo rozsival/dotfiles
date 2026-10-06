@@ -33,13 +33,14 @@ commands:
     help: |-
       Continue the guided setup in an agent harness.
       Starts the real harness binary in this repo with setup/PROMPT.md as the first message; the workstation-setup skill and `dot doctor` drive the session.
+      Sign the harness in first, in this terminal: `omp login anthropic` (Claude Pro/Max), or `claude`, then `/login` and `/exit`.
     args:
       - name: harness
         help: Harness to start
         default: omp
         allowed: [ omp, claude ]
     examples:
-      - dot agent
+      - omp login anthropic && dot agent
       - dot agent claude
 
   - name: doctor
