@@ -10,5 +10,9 @@ window-save-state = always
 
 # Hosts without Ghostty's terminfo (the devbox) reject TERM=xterm-ghostty: `ssh`
 # from a Ghostty shell installs it there with infocmp | tic (cached per host),
-# falling back to TERM=xterm-256color when that fails.
+# falling back to TERM=xterm-256color when that fails. That copy lands in the
+# remote ~/.terminfo, which ncurses ignores for setuid/setcap binaries (nvtop)
+# and root, so such hosts need it system-wide once (panther-minor's `setup shell`
+# does this), run on the host:
+#   infocmp -x xterm-ghostty >/tmp/g && sudo tic -x -o /etc/terminfo /tmp/g
 shell-integration-features = ssh-env,ssh-terminfo
