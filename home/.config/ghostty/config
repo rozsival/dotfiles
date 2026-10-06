@@ -8,11 +8,11 @@ macos-option-as-alt = left
 
 window-save-state = always
 
-# Hosts without Ghostty's terminfo (the devbox) reject TERM=xterm-ghostty: `ssh`
-# from a Ghostty shell installs it there with infocmp | tic (cached per host),
-# falling back to TERM=xterm-256color when that fails. That copy lands in the
-# remote ~/.terminfo, which ncurses ignores for setuid/setcap binaries (nvtop)
-# and root, so such hosts need it system-wide once (panther-minor's `setup shell`
-# does this), run on the host:
-#   infocmp -x xterm-ghostty >/tmp/g && sudo tic -x -o /etc/terminfo /tmp/g
-shell-integration-features = ssh-env,ssh-terminfo
+# `ssh` from a Ghostty shell sends TERM=xterm-256color, never xterm-ghostty:
+# every host knows it, as root and under sudo too. ssh-terminfo is deliberately
+# off: it installs xterm-ghostty into the remote user's ~/.terminfo only, which
+# root, sudo and setcap binaries never read, and caches the host as done
+# (~/.local/state/ghostty/ssh_cache) so a reflashed box gets the TERM without
+# the terminfo - "Error opening terminal: xterm-ghostty". herdr panes already
+# run xterm-256color, so nothing changes there; COLORTERM keeps truecolor.
+shell-integration-features = ssh-env
