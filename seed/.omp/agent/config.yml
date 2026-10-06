@@ -40,8 +40,7 @@ composer:
 extendedContext: false
 statusLine:
   compactThinkingLevel: false
-disabledProviders:
-  [ ]
+disabledProviders: []
 advisor:
   enabled: true
   syncBacklog: "1"
@@ -73,21 +72,21 @@ bash:
     # is left to the session's mode - it shows which token a shell holds - and
     # the subcommands are enumerated rather than `gh auth *`, because a deny is
     # also tested against every segment and would kill `gh auth status | ...`.
-    - match: 'gh auth status*--show-token*'
+    - match: "gh auth status*--show-token*"
       approval: deny
-    - match: 'gh auth status* -t*'
+    - match: "gh auth status* -t*"
       approval: deny
-    - match: 'gh auth token*'
+    - match: "gh auth token*"
       approval: deny
-    - match: 'gh auth login*'
+    - match: "gh auth login*"
       approval: deny
-    - match: 'gh auth logout*'
+    - match: "gh auth logout*"
       approval: deny
-    - match: 'gh auth refresh*'
+    - match: "gh auth refresh*"
       approval: deny
-    - match: 'gh auth setup-git*'
+    - match: "gh auth setup-git*"
       approval: deny
-    - match: 'gh auth switch*'
+    - match: "gh auth switch*"
       approval: deny
     # Stepping out of the launcher's fence - the exact shape of a past bypass,
     # `env -u GH_CONFIG_DIR -u GH_TOKEN /opt/homebrew/bin/gh pr create`, which
@@ -101,85 +100,85 @@ bash:
     # person approves it, and yolo still stops instead of failing silently -
     # while assigning an export stays `deny`: a probe can write a throwaway
     # HOME and let the launcher set the variable instead.
-    - match: '*/bin/gh *'
+    - match: "*/bin/gh *"
       approval: deny
-    - match: '*/bin/gh'
+    - match: "*/bin/gh"
       approval: deny
-    - match: '*env -u *'
+    - match: "*env -u *"
       approval: deny
-    - match: '*env --unset*'
+    - match: "*env --unset*"
       approval: deny
-    - match: '*env -i *'
+    - match: "*env -i *"
       approval: prompt
-    - match: '*unset *GIT_CONFIG_GLOBAL*'
+    - match: "*unset *GIT_CONFIG_GLOBAL*"
       approval: deny
-    - match: '*unset *GIT_SSH_COMMAND*'
+    - match: "*unset *GIT_SSH_COMMAND*"
       approval: deny
-    - match: '*unset *GH_CONFIG_DIR*'
+    - match: "*unset *GH_CONFIG_DIR*"
       approval: deny
-    - match: '*unset *GIT_TERMINAL_PROMPT*'
+    - match: "*unset *GIT_TERMINAL_PROMPT*"
       approval: deny
-    - match: '*GIT_CONFIG_GLOBAL=*'
+    - match: "*GIT_CONFIG_GLOBAL=*"
       approval: deny
-    - match: '*GIT_SSH_COMMAND=*'
+    - match: "*GIT_SSH_COMMAND=*"
       approval: deny
-    - match: '*GH_CONFIG_DIR=*'
+    - match: "*GH_CONFIG_DIR=*"
       approval: deny
-    - match: '*GIT_TERMINAL_PROMPT=*'
+    - match: "*GIT_TERMINAL_PROMPT=*"
       approval: deny
     # Credential stores outside the agent's own: the macOS keychain (where the
     # human gh login and git credentials live) and 1Password.
-    - match: '*security find-generic-password*'
+    - match: "*security find-generic-password*"
       approval: deny
-    - match: '*security find-internet-password*'
+    - match: "*security find-internet-password*"
       approval: deny
-    - match: '*security dump-keychain*'
+    - match: "*security dump-keychain*"
       approval: deny
-    - match: '*git credential-osxkeychain*'
+    - match: "*git credential-osxkeychain*"
       approval: deny
-    - match: 'op *'
+    - match: "op *"
       approval: prompt
-    - match: 'op'
+    - match: "op"
       approval: prompt
     # GitHub surfaces no agent session should touch.
-    - match: 'gh repo delete*'
+    - match: "gh repo delete*"
       approval: deny
-    - match: 'gh secret *'
+    - match: "gh secret *"
       approval: deny
-    - match: 'gh variable *'
+    - match: "gh variable *"
       approval: deny
-    - match: 'gh api -X DELETE *'
+    - match: "gh api -X DELETE *"
       approval: deny
-    - match: 'gh api --method DELETE *'
+    - match: "gh api --method DELETE *"
       approval: deny
-    - match: 'gh workflow run *'
+    - match: "gh workflow run *"
       approval: prompt
     # Cloud and infrastructure: a person decides.
-    - match: 'gcloud *'
+    - match: "gcloud *"
       approval: prompt
-    - match: 'gcloud'
+    - match: "gcloud"
       approval: prompt
-    - match: '*terraform apply*'
+    - match: "*terraform apply*"
       approval: prompt
-    - match: '*terraform import*'
+    - match: "*terraform import*"
       approval: prompt
-    - match: '*terraform destroy*'
+    - match: "*terraform destroy*"
       approval: deny
     # History and data destruction. --force-with-lease is deliberately left
     # alone: every force pattern needs a space right after --force/-f.
-    - match: '* --no-verify*'
+    - match: "* --no-verify*"
       approval: deny
-    - match: 'git push --force *'
+    - match: "git push --force *"
       approval: deny
-    - match: 'git push * --force *'
+    - match: "git push * --force *"
       approval: deny
-    - match: 'git push -f *'
+    - match: "git push -f *"
       approval: deny
-    - match: 'git push * -f *'
+    - match: "git push * -f *"
       approval: deny
-    - match: '*docker system prune*'
+    - match: "*docker system prune*"
       approval: deny
-    - match: '*docker volume rm*'
+    - match: "*docker volume rm*"
       approval: deny
     # No `rm -rf` rules: `rm -rf /*` and `rm -rf ~*` would also match every
     # absolute or home path (`rm -rf ~/projects/app/node_modules`), and bash's

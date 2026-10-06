@@ -25,8 +25,8 @@ lists a command's options.
   terminal, so Homebrew steps that need sudo fail (dot sets `HOMEBREW_NO_SUDO` there) and dot's own sudo
   calls wait on a Touch ID prompt no one sees. Give the exact command or click path,
   wait for confirmation, then verify with a read-only check.
-- **Never read secret contents.** Check existence and mode only (`ls -l`, `dot vault status`, `dot
-  doctor`) for `~/.config/devbox/secrets.env`, `*/app.pem`, `~/.npmrc`, `~/.omp/agent/models.yml` and
+- **Never read secret contents.** Check existence and mode only (`ls -l`, `dot vault status`,
+  `dot doctor`) for `~/.config/devbox/secrets.env`, `*/app.pem`, `~/.npmrc`, `~/.omp/agent/models.yml` and
   `~/.omp/agent/.env`. No `op read`, no `op item get --reveal`, no `gh auth token`.
 - Not secret, fine to read: `~/.config/devbox/identities.conf` (names, emails, public keys), `.pub`
   files, and `ssh-add -L` against the 1Password agent.
@@ -93,8 +93,9 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 1. The person runs `gh auth login --hostname github.com --git-protocol ssh --web`.
 2. SSH: `ssh -T git@github.com` (personal) and `ssh -P apitree -T git@github.com` (work) each answer
    `Hi <login>!` after a 1Password approval. The keys are the same 1Password items as before, so they
-   are already registered on GitHub. Only a brand-new key needs `gh ssh-key add ~/.ssh/<file>.pub
-   --type authentication` and, for signing keys, `--type signing` (on the right account).
+   are already registered on GitHub. Only a brand-new key needs
+   `gh ssh-key add ~/.ssh/<file>.pub --type authentication` and, for signing keys, `--type signing` (on the
+   right account).
 3. Switch this repo and devbox to SSH remotes now that pushing works:
    `git -C <repo> remote set-url origin git@github.com:rozsival/<repo>.git`.
 4. Signing check: an empty commit in a scratch repo shows `Good "git" signature` in
@@ -135,11 +136,11 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   deleting; root-owned ones (python.org, `/usr/local/bin`) are the person's to remove with sudo. First
   rebase what was built on a removed Python: `uv tool install --reinstall --managed-python <tool>`, and
   move `~/.config/gcloud/virtenv` aside so gcloud uses Homebrew's Python.
-- Packages the Brewfile does not declare: `bin/dot brew --cleanup` lists them. `brew bundle cleanup
-  --force` first resets Homebrew's trust store to the Brewfile, so it cannot uninstall a leftover from a
-  third-party tap (and re-trusting before re-running is wiped again). Remove each such leftover on its
-  own: `brew trust --formula <tap>/<name> && brew uninstall <name> && brew untap <tap>` (untapping also
-  drops the trust entry).
+- Packages the Brewfile does not declare: `bin/dot brew --cleanup` lists them.
+  `brew bundle cleanup --force` first resets Homebrew's trust store to the Brewfile, so it cannot uninstall a
+  leftover from a third-party tap (and re-trusting before re-running is wiped again). Remove each such
+  leftover on its own: `brew trust --formula <tap>/<name> && brew uninstall <name> && brew untap <tap>`
+  (untapping also drops the trust entry).
 - App Store: the person signs in to the App Store app (`mas` cannot), then `bin/dot brew --mas`. Large (Xcode, Final Cut
   Pro, Logic Pro): confirm before starting.
 - No cask, manual download: Moshi (above), Amphetamine Enhancer (from within Amphetamine).

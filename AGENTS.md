@@ -24,6 +24,8 @@ macos/defaults.sh       macOS defaults; --check is read-only drift detection
 vault.list              secret files kept as 1Password Documents (`dot vault`)
 setup/PROMPT.md         first message of the guided-setup session
 .agents/skills/         workstation-setup skill (.claude/skills/ holds symlinks for Claude Code)
+Makefile                repo tasks: build (bashly), fmt, lint, check
+mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettier and editors
 ```
 
 ## Critical rules
@@ -61,7 +63,8 @@ setup/PROMPT.md         first message of the guided-setup session
    per tap and never via a one-off `brew trust`. Prefer homebrew-core/cask whenever they ship the package.
 10. **`bin/dot` is generated.** Change `cli/` (a command's options, args, help and completions in
     `cli/bashly.yml`, its body in `cli/<command>_command.sh`, shared functions in `cli/lib/`), run
-    `bashly generate` from the repo root and commit `cli/` and `bin/dot` together. Arguments with a fixed set
+    `make build` and commit `cli/` and `bin/dot` together. Never edit or format `bin/dot` itself: bashly pipes
+    it through `shfmt -i 2`, and `make check` fails when it differs from a fresh build. Arguments with a fixed set
     of values get `allowed:`, open ones a `completions:` entry, so Tab completion keeps up without touching
     `home/.local/share/bash-completion/completions/dot.bash`; `dot __complete` skips `initialize.sh`, so
     completion functions must not rely on its globals.
@@ -76,13 +79,13 @@ not `git config --global`.
 ## Verify
 
 ```bash
-bashly generate && git diff --exit-code bin/dot   # bin/dot matches cli/
-shellcheck bin/dot install.sh macos/defaults.sh home/.bashrc home/.bash_profile home/.config/bash/*.sh \
-  home/.local/share/bash-completion/completions/dot.bash
-/bin/bash -n install.sh && /bin/bash -n macos/defaults.sh
+make check                  # shfmt + prettier (check only), shellcheck, bash 3.2 parse, bin/dot matches cli/
+make fmt                    # write the formatting check would ask for
 bin/dot link --dry-run      # what linking would change
 bin/dot macos --check       # read-only
 bin/dot doctor
 ```
 
 Risky paths (`dot link`, `dot identities`) can be exercised against a throwaway `HOME=$(mktemp -d)`.
+
+`make` needs `mise trust` once in this repo; `mise exec` then installs the pinned prettier on first use.

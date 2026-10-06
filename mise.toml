@@ -1,0 +1,6 @@
+# Repo tooling that Homebrew does not provide (shfmt, shellcheck, bashly come from the Brewfile).
+# `make` runs these through `mise exec`, which installs anything missing; run `mise trust` once.
+
+[tools]
+node = "24"
+"npm:prettier" = "3.9.9"

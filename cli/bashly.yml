@@ -1,4 +1,4 @@
-# The dot CLI. `bashly generate` (repo root) builds bin/dot from this file, the
+# The dot CLI. `make build` (bashly generate) builds bin/dot from this file, the
 # *_command.sh partials next to it and lib/. The first line of each `help` is
 # the summary in command lists; the rest shows only in that command's --help.
 name: dot
@@ -38,7 +38,7 @@ commands:
       - name: harness
         help: Harness to start
         default: omp
-        allowed: [ omp, claude ]
+        allowed: [omp, claude]
     examples:
       - omp login anthropic && dot agent
       - dot agent claude
@@ -77,13 +77,13 @@ commands:
     flags:
       - long: --mas
         help: Use Brewfile.mas instead (sign in to the App Store app first)
-        conflicts: [ --check, --cleanup ]
+        conflicts: [--check, --cleanup]
       - long: --check
         help: List what Brewfile and Brewfile.mas are missing
-        conflicts: [ --mas, --cleanup ]
+        conflicts: [--mas, --cleanup]
       - long: --cleanup
         help: List what is installed but not in the Brewfile; removes nothing
-        conflicts: [ --mas, --check ]
+        conflicts: [--mas, --check]
 
   - name: macos
     group: Parts
@@ -107,7 +107,7 @@ commands:
       Sync vault.list files with 1Password Documents.
       Account DOT_OP_ACCOUNT, vault DOT_OP_VAULT. Without a subcommand: status.
     dependencies:
-      op: '1Password CLI: dot brew'
+      op: "1Password CLI: dot brew"
     commands:
       - name: status
         default: force
@@ -117,7 +117,7 @@ commands:
             help: vault.list titles to act on; none means all
             repeatable: true
             completions:
-              dynamic: [ vault_titles ]
+              dynamic: [vault_titles]
       - name: pull
         help: |-
           Restore files from 1Password.

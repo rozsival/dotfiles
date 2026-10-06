@@ -1,10 +1,12 @@
 # bashly (https://bashly.dev) builds bin/dot from cli/. After editing cli/, run
-# `bashly generate` from the repo root and commit cli/ and bin/dot together.
+# `make build` (bashly generate) and commit cli/ and bin/dot together.
 source_dir: cli
 target_dir: bin
 strict: true
 # The committed bin/dot: no view markers, no inspect_args, no sourcing guard.
 env: production
+# Same shfmt style as the rest of the repo (Makefile SHFMT), so bin/dot reads like cli/.
+formatter: shfmt -i 2
 # `dot __complete …` answers completions at runtime; `dot completions` prints
 # the shell adapter (home/.local/share/bash-completion/completions/dot.bash).
 completions: bash
