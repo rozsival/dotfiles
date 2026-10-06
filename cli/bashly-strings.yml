@@ -1,0 +1,4 @@
+# Overrides of bashly's message strings; anything not listed keeps the default.
+
+# macOS ships bash 3.2; install.sh installs Homebrew's bash before running dot.
+unsupported_bash_version: "dot needs bash 4.2 or newer: install.sh installs Homebrew's, or run it as /opt/homebrew/bin/bash bin/dot"

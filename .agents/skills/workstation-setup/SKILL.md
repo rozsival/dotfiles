@@ -10,10 +10,11 @@ failures in the phase order below (later phases depend on earlier ones), re-run 
 after each step, and finish when doctor prints `all checks passed`. Warnings (`!`) are judgement
 calls - mention them, fix them if the person agrees.
 
-`bin/dot setup` already ran: Xcode CLT, Homebrew + `Brewfile`, Homebrew bash as login shell, `dot link`,
-mise Node, rustup, OMP, Claude Code, agent-browser, global skills, moshi-hook service + hooks, Touch ID
-for sudo, macOS defaults. Re-run a single piece (`dot brew`, `dot link`, `dot macos`) rather than all of
-`dot setup`.
+`install.sh` already installed Xcode CLT, Homebrew and Homebrew bash (`bin/dot` needs it), and `bin/dot
+setup` ran: `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, OMP, Claude Code,
+agent-browser, global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults. Re-run a
+single piece (`dot brew`, `dot link`, `dot macos`) rather than all of `dot setup`; `dot <command> --help`
+lists a command's options.
 
 ## Ground rules
 

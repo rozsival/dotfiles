@@ -1,0 +1,148 @@
+# The dot CLI. `bashly generate` (repo root) builds bin/dot from this file, the
+# *_command.sh partials next to it and lib/. The first line of each `help` is
+# the summary in command lists; the rest shows only in that command's --help.
+name: dot
+help: |-
+  Takes this Mac from a fresh install to `dot doctor` passing.
+  Run `dot setup`, then `dot agent` for the guided rest; `dot doctor` tells you what is left.
+# `footer` lands in double quotes: \$ prints a dollar. `dot --version` prints
+# the checkout's commit, set in initialize.sh.
+footer: |-
+  Fresh Mac: /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/rozsival/dotfiles/main/install.sh)"
+
+environment_variables:
+  - name: dot_op_account
+    help: 1Password account for `dot vault` and `dot doctor`
+    default: my.1password.com
+  - name: dot_op_vault
+    help: 1Password vault holding the vault.list Documents
+    default: Workstation
+  - name: devbox_dir
+    help: Clone of the devbox repo
+    default: $HOME/projects/rozsival/devbox
+
+commands:
+  - name: setup
+    group: Setup
+    help: |-
+      Everything automatable; idempotent.
+      Brewfile, Homebrew bash as login shell, `dot link`, mise and rustup runtimes, gcloud components, OMP, Claude Code, agent skills, moshi-hook, Touch ID for sudo, macOS defaults. install.sh runs it once Xcode CLT, Homebrew and Homebrew bash exist. Run it in your own terminal: it asks for sudo.
+
+  - name: agent
+    group: Setup
+    help: |-
+      Continue the guided setup in an agent harness.
+      Starts the real harness binary in this repo with setup/PROMPT.md as the first message; the workstation-setup skill and `dot doctor` drive the session.
+    args:
+      - name: harness
+        help: Harness to start
+        default: omp
+        allowed: [ omp, claude ]
+    examples:
+      - dot agent
+      - dot agent claude
+
+  - name: doctor
+    group: Setup
+    help: |-
+      Acceptance test for the whole machine.
+      Exits 1 while any check fails; every failure comes with the command that fixes it.
+
+  - name: sync
+    group: Maintenance
+    help: |-
+      Bring this Mac up to what origin has.
+      Fast-forwards this repo (refusing uncommitted changes), then runs `dot link`, `dot brew` and `dot macos --check`.
+
+  - name: update
+    group: Maintenance
+    help: |-
+      Upgrade everything installed.
+      Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook; clears the shell's completion caches.
+
+  - name: link
+    group: Parts
+    help: |-
+      Symlink home/ into ~ and copy seed/ where absent.
+      Files, not directories, are linked; whatever a link replaces moves to ~/.dotfiles-backup/<time>/. Links whose source left home/ are removed.
+    flags:
+      - long: --dry-run
+        short: -n
+        help: Print what would change without changing it
+
+  - name: brew
+    group: Parts
+    help: Install what the Brewfile declares.
+    flags:
+      - long: --mas
+        help: Use Brewfile.mas instead (sign in to the App Store app first)
+        conflicts: [ --check, --cleanup ]
+      - long: --check
+        help: List what Brewfile and Brewfile.mas are missing
+        conflicts: [ --mas, --cleanup ]
+      - long: --cleanup
+        help: List what is installed but not in the Brewfile; removes nothing
+        conflicts: [ --mas, --check ]
+
+  - name: macos
+    group: Parts
+    help: Apply the macOS defaults in macos/defaults.sh.
+    flags:
+      - long: --check
+        help: Report drift without changing anything (no sudo, no restarts)
+
+  - name: identities
+    group: Parts
+    help: |-
+      Render git and SSH identity config.
+      Writes ~/.gitconfig, ~/.ssh/config.d/identities, ~/.ssh/allowed_signers and the id_*.pub and signing_*.pub files from ~/.config/devbox/identities.conf, with devbox's own renderer.
+    flags:
+      - long: --check
+        help: Exit 1 if any rendered file is missing or stale; writes nothing
+
+  - name: vault
+    group: Parts
+    help: |-
+      Sync vault.list files with 1Password Documents.
+      Account DOT_OP_ACCOUNT, vault DOT_OP_VAULT. Without a subcommand: status.
+    dependencies:
+      op: '1Password CLI: dot brew'
+    commands:
+      - name: status
+        default: force
+        help: Compare disk with 1Password.
+        args: &vault_titles
+          - name: title
+            help: vault.list titles to act on; none means all
+            repeatable: true
+            completions:
+              dynamic: [ vault_titles ]
+      - name: pull
+        help: |-
+          Restore files from 1Password.
+          Files already on disk are kept unless --force is given. Each is written with the mode vault.list names.
+        args: *vault_titles
+        flags:
+          - long: --force
+            short: -f
+            help: Overwrite files already on disk
+        examples:
+          - dot vault pull
+          - dot vault pull --force devbox/identities.conf
+      - name: push
+        help: |-
+          Upload files to 1Password.
+          Creates the vault and any missing Document; updates the rest.
+        args: *vault_titles
+        examples:
+          - dot vault push omp/models.yml
+
+  - name: help
+    help: Show help about a command.
+    args:
+      - name: command
+        help: Command to show help for
+
+  - name: completions
+    private: true
+    help: Print the bash completion script.

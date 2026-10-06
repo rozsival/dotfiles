@@ -24,7 +24,7 @@ test for both.
 
 | Feature                  | What it gives you                                                                                            |
 |--------------------------|--------------------------------------------------------------------------------------------------------------|
-| **One-command install**  | `install.sh` gets git, clones the repo and runs `dot setup`: Homebrew, shell, links, runtimes, agents        |
+| **One-command install**  | `install.sh` gets git, Homebrew and its bash, clones the repo and runs `dot setup`: shell, links, agents     |
 | **Agent-guided rest**    | `dot agent` hands the manual steps to OMP or Claude Code; you click and approve, the agent verifies          |
 | **Acceptance test**      | `dot doctor` checks the whole machine, and every ✗ comes with the command that fixes it                     |
 | **No private keys**      | SSH and commit signing go through the 1Password agent; `~/.ssh` holds only `.pub` key selectors              |
@@ -42,7 +42,7 @@ test for both.
 the `Workstation` vault.
 
 ```bash
-# 1. Automated: Xcode CLT, clone to ~/projects/rozsival/dotfiles, then `dot setup`
+# 1. Automated: Xcode CLT, clone to ~/projects/rozsival/dotfiles, Homebrew + its bash, then `dot setup`
 #    (bash -c, not curl | bash: the installers it starts read the terminal)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rozsival/dotfiles/main/install.sh)"
 
@@ -53,8 +53,9 @@ cd ~/projects/rozsival/dotfiles && bin/dot agent   # or: bin/dot agent claude
 bin/dot doctor
 ```
 
-`dot setup` asks for your password and, once, for the Xcode CLT dialog. It is idempotent, but re-running one piece
-(`dot brew`, `dot link`, `dot macos`) is faster than running it all again.
+`install.sh` waits once for the Xcode CLT dialog, and Homebrew's installer and `dot setup` ask for your password.
+`dot setup` is idempotent, but re-running one piece (`dot brew`, `dot link`, `dot macos`) is faster than running it all
+again.
 
 > [!WARNING]
 > Run anything that can prompt for sudo or Touch ID in your own terminal: `dot setup`, `dot brew`, `dot sync`,
@@ -65,14 +66,15 @@ bin/dot doctor
 
 ```mermaid
 flowchart LR
-  I["install.sh<br/>CLT + clone"] --> S["dot setup<br/>everything a script can do"]
+  I["install.sh<br/>CLT, clone, Homebrew"] --> S["dot setup<br/>everything a script can do"]
   S --> A["dot agent<br/>OMP / Claude Code<br/>+ workstation-setup skill"]
   A <-->|" fix, re-check "| D["dot doctor<br/>acceptance test"]
   Y(["you: sign-ins, approvals,<br/>1Password, App Store"]) -.-> A
 ```
 
-**Automated** by `dot setup`: Xcode CLT → Homebrew and the [`Brewfile`](Brewfile) → Homebrew bash as the login shell →
-`dot link` → mise Node and rustup → OMP, Claude Code, agent skills and moshi-hook → Touch ID for sudo → macOS defaults.
+**Automated** by `install.sh`: Xcode CLT → clone → Homebrew and its bash, which `bin/dot` runs on. Then by `dot setup`:
+the [`Brewfile`](Brewfile) → Homebrew bash as the login shell → `dot link` → mise Node and rustup → OMP, Claude Code,
+agent skills and moshi-hook → Touch ID for sudo → macOS defaults.
 
 **Guided** by `dot agent`: the harness starts with [`setup/PROMPT.md`](setup/PROMPT.md) and the
 [`workstation-setup`](.agents/skills/workstation-setup/SKILL.md) skill, runs `dot doctor`, and takes the failures in
@@ -94,8 +96,10 @@ secret's value.
 
 ## 🧰 Commands
 
-`dot` is on the PATH once linked: `~/.local/bin/dot` points at `bin/dot`. Tab completes its commands, options and
-`vault.list` titles.
+`dot` is on the PATH once linked: `~/.local/bin/dot` points at `bin/dot`, a [bashly](https://bashly.dev) script built
+from [`cli/`](cli). `dot --help`, `dot <command> --help` and `dot help <command>` show each command's options,
+arguments, examples and environment variables (`DOT_OP_ACCOUNT`, `DOT_OP_VAULT`, `DEVBOX_DIR`). Tab completes
+commands, options, allowed values and `vault.list` titles: the completion asks `dot` itself, so it never goes stale.
 
 | Command                                   | What it does                                                                                       |
 |-------------------------------------------|----------------------------------------------------------------------------------------------------|
@@ -108,7 +112,7 @@ secret's value.
 | `dot brew [--mas\|--check\|--cleanup]`    | `brew bundle` for `Brewfile` or `Brewfile.mas`; lists what is missing, or installed but undeclared |
 | `dot macos [--check]`                     | Applies macOS defaults, or reports drift without changing anything                                 |
 | `dot identities [--check]`                | Renders git and SSH identity config from devbox's `identities.conf`                                |
-| `dot vault <status\|pull\|push> [title…]` | Syncs the files in `vault.list` with 1Password Documents                                           |
+| `dot vault [status\|pull\|push] [title…]` | Syncs the files in `vault.list` with 1Password Documents (default: `status`)                       |
 
 > [!TIP]
 > Grant Ghostty **App Management** (System Settings → Privacy & Security). Without it macOS refuses Homebrew's changes
@@ -165,8 +169,9 @@ except to restore `identities.conf` and `secrets.env` from 1Password. It owns wh
 
 | Path                                                   | Contents                                                                 |
 |--------------------------------------------------------|--------------------------------------------------------------------------|
-| [`install.sh`](install.sh)                             | Fresh-Mac entry: Xcode CLT, clone, `exec bin/dot setup`                  |
-| [`bin/dot`](bin/dot)                                   | The CLI; bash 3.2, because it runs before Homebrew bash exists           |
+| [`install.sh`](install.sh)                             | Fresh-Mac entry: Xcode CLT, clone, Homebrew + bash, `dot setup`          |
+| [`bin/dot`](bin/dot)                                   | The CLI, generated by bashly; needs bash 4.2+, so Homebrew's             |
+| [`cli/`](cli)                                          | Its source: `bashly.yml`, one partial per command, `lib/` helpers        |
 | [`Brewfile`](Brewfile), [`Brewfile.mas`](Brewfile.mas) | Homebrew packages and casks; App Store apps                              |
 | [`home/`](home)                                        | Symlinked into `~` file by file                                          |
 | [`seed/`](seed)                                        | Copied into `~` only when absent                                         |
@@ -180,6 +185,7 @@ except to restore `identities.conf` and `secrets.env` from 1Password. It owns wh
 | To add            | Do this                                                                                   |
 |-------------------|-------------------------------------------------------------------------------------------|
 | CLI or app        | A line in `Brewfile` (App Store: `Brewfile.mas`), then `dot brew`                         |
+| `dot` command     | Edit `cli/bashly.yml` and the command's partial in `cli/`, then `bashly generate`         |
 | Third-party tap   | Fully qualified entry with `trusted: true`, so only that formula is trusted               |
 | Dotfile           | The file in `home/` at its path relative to `~`, then `dot link`                          |
 | macOS setting     | A `pref` line in `macos/defaults.sh` with this Mac's value, then `dot macos --check`      |
