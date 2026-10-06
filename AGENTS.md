@@ -39,9 +39,11 @@ mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettie
    files (in an agent session that writes the agent's gitconfig). Slow init output goes through
    `_dot_cached` in `interactive.sh`. Startup budget: < 400 ms (`dot doctor` measures it).
 3. **Ownership boundaries.** Never manage `~/.config/devbox/**` (except restoring `identities.conf` and
-   `secrets.env` via `vault.list`), `~/.local/libexec/devbox-agent/**`, `~/.local/bin/devbox-*`,
-   `~/.claude/settings.json` (moshi-hook and other tools rewrite its hooks). `~/.omp/agent/config.yml` is a
-   seed, never a symlink: `devbox sync omp` rsyncs it and a symlink would arrive dangling.
+   `secrets.env` via `vault.list`), `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities`,
+   `~/.local/bin/devbox*`, `~/.claude/settings.json` (moshi-hook and other tools rewrite its hooks).
+   `~/.omp/agent/config.yml` is a seed, never a symlink: `devbox sync omp` rsyncs it and a symlink would
+   arrive dangling. Its `bash:` block is a copy of devbox's `home/.omp/agent/config.yml`: change it there
+   first, then mirror it into `seed/` (`dot doctor` compares both).
 4. **Identity is rendered, not tracked.** `user.*`, `gpg.*`, `commit/tag.gpgsign` and `includeIf` live in
    the `~/.gitconfig` that `dot identities` renders from `~/.config/devbox/identities.conf` via devbox's
    own library. Never put them in `home/.config/git/config`: `devbox doctor laptop` reads
@@ -67,7 +69,9 @@ mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettie
     it through `shfmt -i 2`, and `make check` fails when it differs from a fresh build. Arguments with a fixed set
     of values get `allowed:`, open ones a `completions:` entry, so Tab completion keeps up without touching
     `home/.local/share/bash-completion/completions/dot.bash`; `dot __complete` skips `initialize.sh`, so
-    completion functions must not rely on its globals.
+    completion functions must not rely on its globals. Read a flag whose name has an inner dash with a quoted
+    key, `${args['--dry-run']}`: shfmt reads an unquoted subscript as arithmetic and rewrites it to
+    `--dry - run`, a key bashly never sets.
 
 ## Working in an agent session
 

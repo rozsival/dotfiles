@@ -1,1 +1,1 @@
-link_home "${args[--dry - run]:-0}"
+link_home "${args['--dry-run']:-0}"

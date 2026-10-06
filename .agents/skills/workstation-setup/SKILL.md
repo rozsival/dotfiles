@@ -62,13 +62,19 @@ lists the keys (RSA personal key, ED25519 identity/signing keys, `Devbox Laptop`
 
 ```bash
 git clone https://github.com/rozsival/devbox.git ~/projects/rozsival/devbox   # HTTPS: no SSH key on GitHub yet needed
-cd ~/projects/rozsival/devbox && ./bin/devbox agent install
+cd ~/projects/rozsival/devbox
+./bin/devbox install                                # `devbox` on the PATH (~/.local/bin/devbox), bash completion
+./bin/devbox agent install                          # launchers, gh shim, credential helper, devbox-identities
+echo 'DEVBOX_HOST=panther-minor' >.push.env         # workstation alias for `devbox deploy` and `doctor laptop`
 ```
 
-Installs the `omp`/`claude` launchers, `gh` shim, credential helper, `devbox-identities`, agent
-gitconfigs. The PATH line it prints is already in `~/.config/bash/env.sh` - nothing to add; open a new
-shell. Its other printed steps (identities.conf, tokens, App credentials) were covered by phase 2.
-Verify: doctor's `omp -> devbox launcher`, `claude -> devbox launcher`.
+`agent install` installs the `omp`/`claude` launchers, `gh` shim, credential helper, `devbox-identities`,
+agent gitconfigs. The PATH line it prints is already in `~/.config/bash/env.sh` - nothing to add; open a
+new shell. Its other printed steps (identities.conf, tokens, App credentials) were covered by phase 2.
+`.push.env` is gitignored, so a new Mac never has it; without it `devbox deploy` needs the host as an
+argument and `devbox doctor laptop` silently skips its `Host panther-minor` check.
+Verify: doctor's `omp -> devbox launcher`, `claude -> devbox launcher`; `command -v devbox` prints
+`~/.local/bin/devbox`.
 
 ## Phase 4 - git and ssh identity
 
@@ -80,7 +86,9 @@ Renders from `~/.config/devbox/identities.conf`, with devbox's own renderer: `~/
 identity, op-ssh-sign signing, `includeIf` per tree and per GitHub org), `~/.config/git/identities/*`,
 `~/.ssh/config.d/identities` (GitHub `Host`/`Match … tagged` blocks), `~/.ssh/allowed_signers`, and the
 `id_<slug>.pub`/`signing_<slug>.pub` selectors. Shared git settings stay in `~/.config/git/config`
-(tracked); never put identity there.
+(tracked); never put identity there. `~/.ssh/config` itself is tracked (`home/.ssh/config`, symlinked): it
+holds `Host *` with the 1Password socket, `panther-minor`/`pi-zero` (`id_personal.pub`) and `devbox`
+(`devbox.pub`), and `Include`s the rendered GitHub blocks. Editing it edits this repo.
 
 `~/.ssh/devbox.pub` is not in the registry: take it from the agent -
 `SSH_AUTH_SOCK=… ssh-add -L | grep 'Devbox Laptop' > ~/.ssh/devbox.pub` (the comment is the item title;
@@ -108,14 +116,18 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 2. `ssh devbox true` - the person accepts the host key and approves 1Password.
 3. The person runs `herdr machine add devbox --label Devbox` (interactive). Verify: `herdr machine list`.
 4. `cd ~/projects/rozsival/devbox && ./bin/devbox doctor laptop` - the end-to-end test for keys, tokens
-   and connections. Fix what it names using that repo's `devbox-laptop` skill.
+   and connections. Its hints assume hand-written config; here the owners differ. An `id_*`/`signing_*`
+   `.pub`, GitHub `Host`/`Match`, `~/.gitconfig`, `includeIf` or `allowed_signers` failure: fix
+   `~/.config/devbox/identities.conf` if needed and re-run `bin/dot identities`, never hand-edit the
+   rendered files. A `Host devbox`/`Host panther-minor` failure: `home/.ssh/config` in this repo. Launchers,
+   agent gitconfigs, tokens, App credentials: that repo's `devbox-laptop` skill.
 
 ## Phase 7 - agents and phone
 
 - The harness that runs this session is already signed in: `dot agent` needs that first (README quick
   start). The other one: Claude Code - the person runs `claude` and `/login`; OMP - `omp login anthropic`
-  (Claude Pro/Max). Codex: `codex login`. Verify: doctor's `omp signed in to Anthropic` and
-  `claude signed in (/login)`.
+  (Claude Pro/Max). Codex: `codex login`. Verify: doctor's `omp signed in to Anthropic`,
+  `claude signed in (/login)` and `codex signed in`.
 - Moshi for Mac has no cask: the person downloads it from https://getmoshi.app. Pairing: Moshi app →
   Settings → Hooks → token, then the person runs `moshi-hook pair --token <token>`. Verify:
   `moshi-hook status` shows `status: paired`; `moshi-hook doctor`.

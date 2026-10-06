@@ -206,6 +206,16 @@ doctor_devbox() {
     bad 'devbox repo missing'
     hint "git clone $DEVBOX_REPO $(tilde "$DEVBOX_DIR")"
   }
+  [ -L "$HOME/.local/bin/devbox" ] && [ "$HOME/.local/bin/devbox" -ef "$DEVBOX_DIR/bin/devbox" ] && ok 'devbox command on the PATH' || {
+    bad "$(tilde "$HOME/.local/bin/devbox") is not a link to $(tilde "$DEVBOX_DIR")/bin/devbox"
+    hint "cd $(tilde "$DEVBOX_DIR") && ./bin/devbox install"
+  }
+  # deploy and doctor laptop take the workstation alias from the checkout's
+  # gitignored .push.env, so a new Mac starts without it.
+  grep -q '^DEVBOX_HOST=.' "$DEVBOX_DIR/.push.env" 2>/dev/null && ok 'devbox .push.env names the workstation' || {
+    bad "no DEVBOX_HOST in $(tilde "$DEVBOX_DIR")/.push.env"
+    hint "echo 'DEVBOX_HOST=panther-minor' >$(tilde "$DEVBOX_DIR")/.push.env"
+  }
   local cmd want got
   for cmd in omp claude; do
     want="$HOME/.local/libexec/devbox-agent/launchers/$cmd"
@@ -249,6 +259,25 @@ doctor_agents() {
       hint 'claude, then /login and /exit'
     fi
   fi
+  if have codex; then
+    if codex login status </dev/null >/dev/null 2>&1; then ok 'codex signed in'; else
+      bad 'codex not signed in'
+      hint 'codex login'
+    fi
+  fi
+  # OMP's bash.patterns guardrail is devbox's (home/.omp/agent/config.yml);
+  # the seed and the live file carry copies, and `devbox sync omp` pushes the
+  # live one over the devbox's. Neither installer merges into an existing file.
+  local tpl="$DEVBOX_DIR/home/.omp/agent/config.yml" copy
+  if [ -r "$tpl" ]; then
+    for copy in "$DOTFILES/seed/.omp/agent/config.yml" "$HOME/.omp/agent/config.yml"; do
+      [ -r "$copy" ] || continue
+      if [ "$(omp_guardrail "$copy")" = "$(omp_guardrail "$tpl")" ]; then ok "OMP guardrail current: $(tilde "$copy")"; else
+        warn "OMP guardrail in $(tilde "$copy") differs from devbox's"
+        hint "replace its bash: block with the one in $(tilde "$tpl")"
+      fi
+    done
+  fi
   [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || bad 'agent-browser missing'
   local pair skill
   for pair in $SKILLS; do
@@ -291,4 +320,10 @@ doctor_agents() {
       ok 'Docker Desktop default socket off'
     fi
   fi
+}
+
+# The top-level `bash:` block of an OMP config, without comments, blank lines
+# or quotes: prettier and OMP each requote YAML scalars their own way.
+omp_guardrail() {
+  awk '/^bash:/ { on = 1; print; next } on && /^[^[:space:]#]/ { on = 0 } on && !/^[[:space:]]*(#|$)/' "$1" | tr -d "\"'"
 }

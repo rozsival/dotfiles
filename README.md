@@ -89,18 +89,18 @@ secret's value.
 > Anthropic models. Run `omp login` without an argument to pick another provider. Claude Code: run `claude`, complete
 > `/login`, then `/exit`. The other harness signs in later, in phase 7.
 
-| #   | Phase              | What happens                                                                         |
-| --- | ------------------ | ------------------------------------------------------------------------------------ |
-| 1   | 1Password          | Sign in, Touch ID on, SSH agent and CLI integration on                               |
-| 2   | Secret files       | `dot vault pull` restores every `vault.list` file with its mode                      |
-| 3   | devbox tooling     | `devbox agent install`: `omp`/`claude` launchers, `gh` shim, `devbox-identities`     |
-| 4   | git & ssh identity | `dot identities` renders `~/.gitconfig`, SSH blocks and `allowed_signers`            |
-| 5   | GitHub             | `gh auth login`, SSH and signing checks, repos switched to SSH remotes               |
-| 6   | Tailscale & devbox | Tailnet login, `herdr machine add devbox`, `devbox doctor laptop`                    |
-| 7   | Agents & phone     | Login for the harness `dot agent` didn't start, Moshi pairing                        |
-| 8   | Apps               | `dot brew`, App Store apps via `dot brew --mas`, JetBrains IDEs, first-run approvals |
-| 9   | Cloud & registries | `gcloud`, `az`, `glab` logins, only for what you use                                 |
-| 10  | Finish             | `dot doctor` prints `✓ all checks passed`                                            |
+| #   | Phase              | What happens                                                                                                                                    |
+| --- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 1Password          | Sign in, Touch ID on, SSH agent and CLI integration on                                                                                          |
+| 2   | Secret files       | `dot vault pull` restores every `vault.list` file with its mode                                                                                 |
+| 3   | devbox tooling     | `devbox install` and `devbox agent install`: `devbox` and the `omp`/`claude` launchers on the PATH, `gh` shim, `devbox-identities`, `.push.env` |
+| 4   | git & ssh identity | `dot identities` renders `~/.gitconfig`, SSH blocks and `allowed_signers`                                                                       |
+| 5   | GitHub             | `gh auth login`, SSH and signing checks, repos switched to SSH remotes                                                                          |
+| 6   | Tailscale & devbox | Tailnet login, `herdr machine add devbox`, `devbox doctor laptop`                                                                               |
+| 7   | Agents & phone     | Login for the harness `dot agent` didn't start, Moshi pairing                                                                                   |
+| 8   | Apps               | `dot brew`, App Store apps via `dot brew --mas`, JetBrains IDEs, first-run approvals                                                            |
+| 9   | Cloud & registries | `gcloud`, `az`, `glab` logins, only for what you use                                                                                            |
+| 10  | Finish             | `dot doctor` prints `✓ all checks passed`                                                                                                       |
 
 ## 🧰 Commands
 
@@ -169,9 +169,13 @@ kept just in case. Everything works with SIP enabled, and `dot macos --check` is
 
 ### Boundary with devbox
 
-devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**` and its launchers. This repo never writes there,
-except to restore `identities.conf` and `secrets.env` from 1Password. It owns what devbox leaves to the laptop:
-`~/.gitconfig`, `~/.ssh/config` and the PATH line that puts the launchers first.
+devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities` and
+`~/.local/bin/devbox*`. This repo never writes there, except to restore `identities.conf` and `secrets.env` from
+1Password. It owns what devbox leaves to the laptop: `~/.ssh/config` (tracked), the files `dot identities` renders
+(`~/.gitconfig`, `~/.config/git/identities/*`, `~/.ssh/config.d/identities`, the `id_*`/`signing_*.pub` selectors,
+`allowed_signers`) and the PATH line that puts the launchers first. devbox's laptop docs describe those files as
+hand-written; here they are not. The OMP preset is seeded from `seed/`, but its `bash:` guardrail is devbox's
+(`home/.omp/agent/config.yml`): `dot doctor` warns when either copy drifts from it.
 
 ## 📁 Repository layout
 
@@ -191,15 +195,16 @@ except to restore `identities.conf` and `secrets.env` from 1Password. It owns wh
 
 ## ➕ Adding things
 
-| To add            | Do this                                                                                   |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| CLI or app        | A line in `Brewfile` (App Store: `Brewfile.mas`), then `dot brew`                         |
-| `dot` command     | Edit `cli/bashly.yml` and the command's partial in `cli/`, then `make build`              |
-| Third-party tap   | Fully qualified entry with `trusted: true`, so only that formula is trusted               |
-| Dotfile           | The file in `home/` at its path relative to `~`, then `dot link`                          |
-| macOS setting     | A `pref` line in `macos/defaults.sh` with this Mac's value, then `dot macos --check`      |
-| Secret file       | A line in `vault.list`, then `dot vault push <title>`                                     |
-| Manual setup step | A `dot doctor` check with a fix hint, plus a phase entry in the `workstation-setup` skill |
+| To add            | Do this                                                                                                                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CLI or app        | A line in `Brewfile` (App Store: `Brewfile.mas`), then `dot brew`                                                                                                                                                     |
+| `dot` command     | Edit `cli/bashly.yml` and the command's partial in `cli/`, then `make build`                                                                                                                                          |
+| Third-party tap   | Fully qualified entry with `trusted: true`, so only that formula is trusted                                                                                                                                           |
+| Dotfile           | The file in `home/` at its path relative to `~`, then `dot link`                                                                                                                                                      |
+| macOS setting     | A `pref` line in `macos/defaults.sh` with this Mac's value, then `dot macos --check`                                                                                                                                  |
+| Secret file       | A line in `vault.list`, then `dot vault push <title>`                                                                                                                                                                 |
+| Identity change   | Edit `~/.config/devbox/identities.conf`, then `dot identities`, `devbox agent install`, `devbox sync identities` and `dot vault push devbox/identities.conf`; a new `app` directory also needs its `vault.list` lines |
+| Manual setup step | A `dot doctor` check with a fix hint, plus a phase entry in the `workstation-setup` skill                                                                                                                             |
 
 Rules for agents changing this repo live in [`AGENTS.md`](AGENTS.md).
 
@@ -210,4 +215,4 @@ Rules for agents changing this repo live in [`AGENTS.md`](AGENTS.md).
 | Maintainer | [@rozsival](https://github.com/rozsival) (see [`CODEOWNERS`](CODEOWNERS))                   |
 | Issues     | [GitHub Issues](https://github.com/rozsival/dotfiles/issues)                                |
 | Companion  | [devbox](https://github.com/rozsival/devbox), the remote agent container this laptop drives |
-| License    | [MIT](LICENSE)                                                                      |
+| License    | [MIT](LICENSE)                                                                              |
