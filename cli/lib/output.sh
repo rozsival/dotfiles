@@ -14,6 +14,12 @@ bad() {
   printf '  %s✗%s %s\n' "$RED" "$RST" "$*"
   FAILS=$((FAILS + 1))
 }
+# Runs a command; a failure is reported and counted, not fatal, so later steps still run.
+attempt() {
+  local rc=0
+  "$@" || rc=$?
+  [ $rc = 0 ] || bad "\`$*\` failed (exit $rc)"
+}
 hint() { printf '    %s→ %s%s\n' "$DIM" "$*" "$RST"; }
 die() {
   printf '%sdot: %s%s\n' "$RED" "$*" "$RST" >&2

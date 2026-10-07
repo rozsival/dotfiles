@@ -41,7 +41,7 @@ person's: hand them the exact command, wait, then verify with the read-only form
 | `dot vault pull [title…]`     | writes files missing on disk; `--force` overwrites existing ones                                                                                      | agent; ask before `--force`           |
 | `dot vault push [title…]`     | overwrites the 1Password Documents                                                                                                                    | agent, only after the person agrees   |
 | `dot sync`                    | `git pull --ff-only`, then `link`, `brew`, `macos --check`                                                                                            | person (Homebrew step)                |
-| `dot update`                  | upgrades Homebrew, mise, OMP, Claude Code, skills, moshi-hook                                                                                         | person                                |
+| `dot update`                  | upgrades Homebrew, mise, OMP, Claude Code, skills, moshi-hook; a failed step doesn't stop the rest, exits 1 at the end                                | person                                |
 | `dot setup`                   | everything automatable, asks for sudo up front                                                                                                        | person                                |
 | `dot agent [omp\|claude]`     | `exec`s an interactive harness                                                                                                                        | person; never from inside an agent    |
 

@@ -109,18 +109,18 @@ from [`cli/`](cli). `dot --help`, `dot <command> --help` and `dot help <command>
 arguments, examples and environment variables (`DOT_OP_ACCOUNT`, `DOT_OP_VAULT`, `DEVBOX_DIR`). Tab completes
 commands, options, allowed values and `vault.list` titles: the completion asks `dot` itself, so it never goes stale.
 
-| Command                                   | What it does                                                                                       |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `dot setup`                               | Everything automatable; idempotent                                                                 |
-| `dot agent [omp\|claude]`                 | Starts the guided setup in an agent harness (default: OMP)                                         |
-| `dot doctor`                              | Checks the whole machine and exits 1 while anything fails                                          |
-| `dot sync`                                | Fast-forwards this repo from origin, then `dot link`, `dot brew` and `dot macos --check`           |
-| `dot update`                              | Upgrades Homebrew, mise, OMP, Claude Code, skills and moshi-hook; clears completion caches         |
-| `dot link [--dry-run]`                    | Symlinks `home/` into `~`, backing up what it replaces; copies `seed/` where absent                |
-| `dot brew [--mas\|--check\|--cleanup]`    | `brew bundle` for `Brewfile` or `Brewfile.mas`; lists what is missing, or installed but undeclared |
-| `dot macos [--check]`                     | Applies macOS defaults, or reports drift without changing anything                                 |
-| `dot identities [--check]`                | Renders git and SSH identity config from devbox's `identities.conf`                                |
-| `dot vault [status\|pull\|push] [title…]` | Syncs the files in `vault.list` with 1Password Documents (default: `status`)                       |
+| Command                                   | What it does                                                                                                                                        |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dot setup`                               | Everything automatable; idempotent                                                                                                                  |
+| `dot agent [omp\|claude]`                 | Starts the guided setup in an agent harness (default: OMP)                                                                                          |
+| `dot doctor`                              | Checks the whole machine and exits 1 while anything fails                                                                                           |
+| `dot sync`                                | Fast-forwards this repo from origin, then `dot link`, `dot brew` and `dot macos --check`                                                            |
+| `dot update`                              | Upgrades Homebrew, mise, OMP, Claude Code, skills and moshi-hook; clears completion caches. A failed step doesn't stop the rest; exits 1 at the end |
+| `dot link [--dry-run]`                    | Symlinks `home/` into `~`, backing up what it replaces; copies `seed/` where absent                                                                 |
+| `dot brew [--mas\|--check\|--cleanup]`    | `brew bundle` for `Brewfile` or `Brewfile.mas`; lists what is missing, or installed but undeclared                                                  |
+| `dot macos [--check]`                     | Applies macOS defaults, or reports drift without changing anything                                                                                  |
+| `dot identities [--check]`                | Renders git and SSH identity config from devbox's `identities.conf`                                                                                 |
+| `dot vault [status\|pull\|push] [title…]` | Syncs the files in `vault.list` with 1Password Documents (default: `status`)                                                                        |
 
 > [!TIP]
 > Grant Ghostty **App Management** (System Settings → Privacy & Security). Without it macOS refuses Homebrew's changes

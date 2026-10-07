@@ -191,7 +191,7 @@ dot_sync_usage() {
 dot_update_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot update\n\n"
-    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches.\n\n"
+    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n\n"
   else
     printf "dot update - Upgrade everything installed.\n\n"
   fi
@@ -1042,6 +1042,12 @@ bad() {
   printf '  %s✗%s %s\n' "$RED" "$RST" "$*"
   FAILS=$((FAILS + 1))
 }
+# Runs a command; a failure is reported and counted, not fatal, so later steps still run.
+attempt() {
+  local rc=0
+  "$@" || rc=$?
+  [ $rc = 0 ] || bad "\`$*\` failed (exit $rc)"
+}
 hint() { printf '    %s→ %s%s\n' "$DIM" "$*" "$RST"; }
 die() {
   printf '%sdot: %s%s\n' "$RED" "$*" "$RST" >&2
@@ -1318,26 +1324,31 @@ dot_update_command() {
   brew_env || die "Homebrew missing in $HOMEBREW_PREFIX: run install.sh"
   shell_env
   step Homebrew
-  brew update
-  brew upgrade
-  brew bundle --file "$DOTFILES/Brewfile"
+  attempt brew update
+  attempt brew upgrade --formula
+  attempt brew upgrade --cask
+  attempt brew bundle --file "$DOTFILES/Brewfile"
   step mise
-  mise upgrade --yes
+  attempt mise upgrade --yes
   step OMP
   # By name, so through the devbox launcher once installed: for `update` it
   # drops its own PATH entries and omp's updater finds the real install. The
   # real binary run directly finds the launcher symlink first and refuses.
-  omp update
+  attempt omp update
   step 'Claude Code'
-  "$HOME/.local/bin/claude" update
+  attempt "$HOME/.local/bin/claude" update
   step Skills
-  npx --yes "skills@$SKILLS_CLI_VERSION" update --global --yes
+  attempt npx --yes "skills@$SKILLS_CLI_VERSION" update --global --yes
   step moshi-hook
   # A new release needs its hooks rewritten and the daemon restarted.
-  moshi-hook install --target omp,claude
-  brew services restart moshi-hook
+  attempt moshi-hook install --target omp,claude
+  attempt brew services restart moshi-hook
   rm -rf "$CACHE_DIR"
   ok 'completion caches cleared; they rebuild in the next shell'
+  [ $FAILS = 0 ] || {
+    printf '\n%s%s✗ %d update step(s) failed%s; the rest ran, see ✗ above\n' "$B" "$RED" "$FAILS" "$RST"
+    return 1
+  }
 
 }
 

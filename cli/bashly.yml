@@ -60,6 +60,7 @@ commands:
     help: |-
       Upgrade everything installed.
       Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook; clears the shell's completion caches.
+      A failing step does not stop the rest: each failure is reported and the command exits 1 at the end.
 
   - name: link
     group: Parts
