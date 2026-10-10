@@ -809,7 +809,7 @@ doctor_agents() {
   fi
   # One OMP preset for this Mac and the devbox: devbox's home/.omp/agent/config.yml.
   # OMP owns the live file and requotes it, so the two compare as data. A change
-  # made in OMP goes into the template, then `devbox sync omp` takes it across.
+  # made in OMP goes into the template, then `devbox sync omp` applies it to both.
   local tpl="$DEVBOX_DIR/home/.omp/agent/config.yml" live="$HOME/.omp/agent/config.yml"
   if [ ! -r "$live" ]; then
     bad "no $(tilde "$live")"
@@ -817,7 +817,7 @@ doctor_agents() {
   elif [ -r "$tpl" ] && have yq; then
     if [ "$(omp_preset "$live")" = "$(omp_preset "$tpl")" ]; then ok "OMP preset matches devbox's"; else
       warn "OMP preset in $(tilde "$live") differs from devbox's $(tilde "$tpl")"
-      hint "a change made in OMP: cp it over the template, make fmt and commit in devbox, then devbox sync omp; a change in devbox: cp the template over it"
+      hint "a change made in OMP: cp it over the template, make fmt and commit in devbox, then devbox sync omp; a change in devbox: devbox sync omp"
     fi
   fi
   [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || bad 'agent-browser missing'
