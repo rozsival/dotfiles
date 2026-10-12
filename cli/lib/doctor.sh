@@ -307,6 +307,7 @@ doctor_agents() {
     bad 'moshi-hook service not running'
     hint 'brew services start moshi-hook'
   fi
+  have moshi-hook && scan_ports_sync 1
   # Docker Desktop at login races launchd's com.docker.socket to recreate
   # /var/run/docker.sock and asks for an admin password on every boot. Its
   # settings file is TCC-protected; the backend log of the last start is not.

@@ -130,7 +130,9 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   `claude signed in (/login)` and `codex signed in`.
 - Moshi for Mac has no cask: the person downloads it from https://getmoshi.app. Pairing: Moshi app →
   Settings → Hooks → token, then the person runs `moshi-hook pair --token <token>`. Verify:
-  `moshi-hook status` shows `status: paired`; `moshi-hook doctor`.
+  `moshi-hook status` shows `status: paired`; `moshi-hook doctor`. If pairing's first-run prompt turned
+  server discovery back to every port, doctor flags `moshi-hook scan-ports`: `dot scan-ports` restores it
+  (probing every port answers login callbacks such as `gcloud auth login` before the tool does).
 - A phone reaching the devbox directly needs its key in `DEVBOX_EXTRA_AUTHORIZED_KEYS` on the
   workstation (devbox `docs/connecting.md`), not on this Mac.
 

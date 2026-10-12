@@ -120,6 +120,7 @@ commands, options, allowed values and `vault.list` titles: the completion asks `
 | `dot brew [--mas\|--check\|--cleanup]`    | `brew bundle` for `Brewfile` or `Brewfile.mas`; lists what is missing, or installed but undeclared                                                  |
 | `dot macos [--check]`                     | Applies macOS defaults, or reports drift without changing anything                                                                                  |
 | `dot identities [--check]`                | Renders git and SSH identity config from devbox's `identities.conf`                                                                                 |
+| `dot scan-ports [ports\|none] [-p dir]`   | Sets the ports moshi-hook probes for dev servers to the union of what projects registered (`none` by default), or reports drift with `--check`      |
 | `dot vault [status\|pull\|push] [title…]` | Syncs the files in `vault.list` with 1Password Documents (default: `status`)                                                                        |
 
 > [!TIP]

@@ -102,6 +102,34 @@ commands:
       - long: --check
         help: Exit 1 if any rendered file is missing or stale; writes nothing
 
+  - name: scan-ports
+    group: Parts
+    help: |-
+      Choose which ports moshi-hook probes for dev servers, per project.
+      moshi-hook HTTP-probes every listening loopback port by default, and the probe breaks login callbacks that listen on a local port (gcloud, GeForce NOW). dot keeps moshi-hook's single scan-ports setting at the union of the ports projects registered here, `none` when there are none. Without ports: re-applies that union and lists the projects.
+      A project is the main worktree of the git repo a directory is in, so its worktrees share one entry. The registry is ~/.local/state/dotfiles/scan-ports; projects whose directory is gone drop out.
+    dependencies:
+      moshi-hook: "Moshi hook daemon: dot brew"
+    args:
+      - name: ports
+        help: This project's ports, as moshi-hook takes them (5173 or 3000,8000-8010); none unregisters it
+        completions:
+          static: [none]
+    flags:
+      - long: --project
+        short: -p
+        arg: dir
+        default: .
+        help: A directory in the project
+        completions:
+          options: [directories]
+      - long: --check
+        help: Exit 1 if the live setting differs from the registry; changes nothing
+    examples:
+      - dot scan-ports 5173
+      - dot scan-ports 3000,8000-8010 --project ~/projects/acme/api
+      - dot scan-ports none
+
   - name: vault
     group: Parts
     help: |-

@@ -59,7 +59,9 @@ setup_agents() {
   done
 
   # Phone notifications and approvals: the daemon plus OMP/Claude hooks. Pairing
-  # with the Moshi app is a guided step (`moshi-hook pair`).
+  # with the Moshi app is a guided step (`moshi-hook pair`). Server discovery is
+  # narrowed first: probing every port breaks login callbacks (scan_ports.sh).
+  scan_ports_sync 0
   brew services start moshi-hook >/dev/null
   [ -f "$HOME/.omp/agent/extensions/moshi-hooks.ts" ] || moshi-hook install --target omp,claude
   ok 'moshi-hook running, hooks installed'

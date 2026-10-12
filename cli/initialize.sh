@@ -14,6 +14,8 @@ export HOMEBREW_NO_ASK=1
 [ -t 0 ] || export HOMEBREW_NO_SUDO=1
 DEVBOX_REPO=https://github.com/rozsival/devbox.git
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+# Projects and the ports moshi-hook may probe for their dev servers (lib/scan_ports.sh).
+SCAN_PORTS_REGISTRY="$STATE_DIR/scan-ports"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
 IDENTITIES_LIB="$HOME/.local/libexec/devbox-identities"
 OP_AGENT_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"

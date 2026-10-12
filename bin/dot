@@ -39,6 +39,7 @@ dot_usage() {
   printf "  %s   Install what the Brewfile declares.\n" "brew       "
   printf "  %s   Apply the macOS defaults in macos/defaults.sh.\n" "macos      "
   printf "  %s   Render git and SSH identity config.\n" "identities "
+  printf "  %s   Choose which ports moshi-hook probes for dev servers, per project.\n" "scan-ports "
   printf "  %s   Sync vault.list files with 1Password Documents.\n" "vault      "
   echo
   printf "%s\n" "Commands:"
@@ -320,6 +321,51 @@ dot_identities_usage() {
 
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+dot_scan_ports_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "dot scan-ports\n\n"
+    printf "  Choose which ports moshi-hook probes for dev servers, per project.\n  moshi-hook HTTP-probes every listening loopback port by default, and the probe\n  breaks login callbacks that listen on a local port (gcloud, GeForce NOW). dot\n  keeps moshi-hook's single scan-ports setting at the union of the ports\n  projects registered here, \`none\` when there are none. Without ports:\n  re-applies that union and lists the projects.\n  A project is the main worktree of the git repo a directory is in, so its\n  worktrees share one entry. The registry is ~/.local/state/dotfiles/scan-ports;\n  projects whose directory is gone drop out.\n\n"
+  else
+    printf "dot scan-ports - Choose which ports moshi-hook probes for dev servers, per project.\n\n"
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  dot scan-ports [PORTS] [OPTIONS]\n"
+  printf "  dot scan-ports --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--project, -p DIR"
+    printf "    A directory in the project\n"
+    printf "    %s\n" "Default: ."
+    echo
+
+    printf "  %s\n" "--check"
+    printf "    Exit 1 if the live setting differs from the registry; changes nothing\n"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Arguments:"
+
+    printf "  %s\n" "PORTS"
+    printf "    This project's ports, as moshi-hook takes them (5173 or 3000,8000-8010);\n    none unregisters it\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  dot scan-ports 5173\n"
+    printf "  dot scan-ports 3000,8000-8010 --project ~/projects/acme/api\n"
+    printf "  dot scan-ports none\n"
     echo
 
   fi
@@ -849,6 +895,7 @@ doctor_agents() {
     bad 'moshi-hook service not running'
     hint 'brew services start moshi-hook'
   fi
+  have moshi-hook && scan_ports_sync 1
   # Docker Desktop at login races launchd's com.docker.socket to recreate
   # /var/run/docker.sock and asks for an admin password on every boot. Its
   # settings file is TCC-protected; the backend log of the last start is not.
@@ -1060,6 +1107,100 @@ tilde() {
   printf '%s' "${1/#"$HOME"/$t}"
 }
 
+#
+# By default moshi-hook HTTP-probes every listening loopback port. The probe also
+# reaches the one-shot servers login flows open for their OAuth callback (gcloud,
+# GeForce NOW), and the flow fails. Its `scan_ports` setting is a single global
+# list, so dot keeps a registry of projects and their dev-server ports and sets
+# the live value to their union, `none` when nothing is registered.
+
+# The project a directory belongs to: its main worktree, so every worktree of a
+# repo shares one entry; the directory itself outside git.
+scan_ports_project() {
+  local dir common
+  dir="$(cd "$1" 2>/dev/null && pwd -P)" || die "no such directory: $1"
+  if common="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then
+    case $common in
+    */.git) dir="${common%/.git}" ;;
+    *) dir="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$common")" ;;
+    esac
+  fi
+  printf '%s' "$dir"
+}
+
+# A port list the way moshi-hook stores it (sorted, overlaps merged), checked by
+# moshi-hook itself against a scratch config so the live one stays untouched.
+scan_ports_normalize() {
+  local tmp out rc=0
+  tmp="$(mktemp -d)"
+  out="$(MOSHI_HOOK_CONFIG_DIR="$tmp" moshi-hook set scan-ports "$1" 2>&1)" || rc=$?
+  rm -rf "$tmp"
+  [ $rc = 0 ] || {
+    printf '%s\n' "$out" >&2
+    return 1
+  }
+  printf '%s\n' "$out" | sed -n 's/^scan-ports: //p'
+}
+
+scan_ports_live() { moshi-hook set scan-ports 2>/dev/null | sed -n 's/^scan-ports: //p'; }
+
+# "ports<TAB>project" lines of registered projects that still exist.
+scan_ports_entries() {
+  local ports project
+  [ -f "$SCAN_PORTS_REGISTRY" ] || return 0
+  while IFS=$'\t' read -r ports project; do
+    [ -d "$project" ] || continue
+    printf '%s\t%s\n' "$ports" "$project"
+  done <"$SCAN_PORTS_REGISTRY"
+}
+
+# The value the live setting should have.
+scan_ports_wanted() {
+  local union
+  union="$(scan_ports_entries | cut -f1 | paste -sd, -)"
+  if [ -z "$union" ]; then echo none; else scan_ports_normalize "$union"; fi
+}
+
+# Registers (ports) or unregisters (`none`) a project; drops projects whose
+# directory is gone.
+scan_ports_register() {
+  local project="$1" ports="$2" tmp
+  if [ "$ports" != none ]; then
+    [ "$ports" != all ] || die 'all is the default this command exists to avoid; name the ports'
+    ports="$(scan_ports_normalize "$ports")" || die "invalid ports: $2"
+  fi
+  mkdir -p "$STATE_DIR"
+  tmp="$(mktemp "$STATE_DIR/scan-ports.XXXXXX")"
+  scan_ports_entries | awk -F'\t' -v p="$project" '$2 != p' >"$tmp"
+  [ "$ports" = none ] || printf '%s\t%s\n' "$ports" "$project" >>"$tmp"
+  sort -t$'\t' -k2 "$tmp" -o "$tmp"
+  mv "$tmp" "$SCAN_PORTS_REGISTRY"
+}
+
+scan_ports_list() {
+  local ports project
+  while IFS=$'\t' read -r ports project; do
+    info "$(tilde "$project"): $ports"
+  done < <(scan_ports_entries)
+}
+
+# check=1 reports drift and changes nothing; otherwise sets the live value.
+scan_ports_sync() {
+  local check="$1" wanted live
+  wanted="$(scan_ports_wanted)" || die "the registry holds ports moshi-hook rejects: $(tilde "$SCAN_PORTS_REGISTRY")"
+  live="$(scan_ports_live)"
+  if [ "$live" = "$wanted" ]; then
+    ok "moshi-hook scan-ports $live"
+  elif [ "$check" = 1 ]; then
+    bad "moshi-hook scan-ports $live, registered projects want $wanted"
+    hint 'dot scan-ports'
+  else
+    moshi-hook set scan-ports "$wanted" >/dev/null
+    ok "moshi-hook scan-ports $wanted (was ${live:-unset})"
+  fi
+  scan_ports_list
+}
+
 setup_shell() {
   local bash_path="$HOMEBREW_PREFIX/bin/bash"
   grep -qx "$bash_path" /etc/shells || echo "$bash_path" | sudo tee -a /etc/shells >/dev/null
@@ -1119,7 +1260,9 @@ setup_agents() {
   done
 
   # Phone notifications and approvals: the daemon plus OMP/Claude hooks. Pairing
-  # with the Moshi app is a guided step (`moshi-hook pair`).
+  # with the Moshi app is a guided step (`moshi-hook pair`). Server discovery is
+  # narrowed first: probing every port breaks login callbacks (scan_ports.sh).
+  scan_ports_sync 0
   brew services start moshi-hook >/dev/null
   [ -f "$HOME/.omp/agent/extensions/moshi-hooks.ts" ] || moshi-hook install --target omp,claude
   ok 'moshi-hook running, hooks installed'
@@ -1380,6 +1523,19 @@ dot_identities_command() {
 
 }
 
+dot_scan_ports_command() {
+
+  ports="${args[ports]:-}"
+  if [ -n "$ports" ]; then
+    [ -z "${args[--check]:-}" ] || die '--check takes no ports'
+    project="$(scan_ports_project "${args[--project]}")" || exit 1
+    scan_ports_register "$project" "$ports"
+  fi
+  scan_ports_sync "${args[--check]:-0}"
+  [ $FAILS = 0 ]
+
+}
+
 dot_vault_status_command() {
 
   # bashly stores a repeatable arg as one string of %q-quoted values.
@@ -1534,6 +1690,13 @@ parse_requirements() {
     action="identities"
     shift
     dot_identities_parse_requirements "$@"
+    shift $#
+    ;;
+
+  scan-ports)
+    action="scan-ports"
+    shift
+    dot_scan_ports_parse_requirements "$@"
     shift $#
     ;;
 
@@ -2163,6 +2326,102 @@ dot_identities_parse_requirements() {
 
 }
 
+dot_scan_ports_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+    --help | -h)
+      long_usage=yes
+      dot_scan_ports_usage
+      exit
+      ;;
+
+    *)
+      break
+      ;;
+
+    esac
+  done
+
+  missing_deps=
+
+  if ! command -v moshi-hook >/dev/null 2>&1; then
+    printf "missing dependency: moshi-hook\n" >&2
+    printf "%s\n\n" "Moshi hook daemon: dot brew" >&2
+    missing_deps=1
+  fi
+
+  if [[ -n $missing_deps ]]; then
+    exit 1
+  fi
+
+  action="scan-ports"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+    --project | -p)
+
+      if [[ -n ${2+x} ]]; then
+        args['--project']="$2"
+        shift
+        shift
+      else
+        printf "%s\n" "--project requires an argument: --project, -p DIR" >&2
+        exit 1
+      fi
+      ;;
+
+    --check)
+
+      args['--check']=1
+      shift
+      ;;
+
+    --)
+      shift
+      while [[ $# -gt 0 ]]; do
+        key="$1"
+
+        if [[ -z ${args['ports']+x} ]]; then
+          args['ports']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+      done
+      break
+      ;;
+
+    -?*)
+      printf "invalid option: %s\n" "$key" >&2
+      exit 1
+      ;;
+
+    *)
+
+      if [[ -z ${args['ports']+x} ]]; then
+        args['ports']=$1
+        shift
+      else
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+      fi
+
+      ;;
+
+    esac
+  done
+
+  [[ -n ${args['--project']:-} ]] || args['--project']="."
+
+}
+
 dot_vault_parse_requirements() {
   local key
 
@@ -2781,6 +3040,11 @@ dot_completion() {
       dot_identities_completion "$completion_current" "$@"
       return
       ;;
+    scan-ports)
+      shift
+      dot_scan_ports_completion "$completion_current" "$@"
+      return
+      ;;
     vault)
       shift
       dot_vault_completion "$completion_current" "$@"
@@ -2804,7 +3068,7 @@ dot_completion() {
       ;;
     esac
   done
-  completion_candidates "$completion_current" setup agent doctor sync update link brew macos identities vault help
+  completion_candidates "$completion_current" setup agent doctor sync update link brew macos identities scan-ports vault help
 
   if [[ $completion_current == -* ]]; then
     completion_flag_candidates --help "$completion_current" --help -h
@@ -3071,6 +3335,60 @@ dot_identities_completion() {
 
 }
 
+dot_scan_ports_completion() {
+  local completion_current="$1"
+  local completion_arg_index=0
+  shift
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --help | -h)
+      completion_blocked_flags["--help"]=1
+      shift
+      ;;
+    --project | -p)
+      shift
+      if [[ $# -eq 0 ]]; then
+        completion_add_options directories
+
+        return
+      fi
+      shift
+      completion_blocked_flags["--project"]=1
+
+      ;;
+    --check)
+      completion_blocked_flags["--check"]=1
+
+      shift
+      ;;
+    *)
+      if [[ $completion_arg_index -ge 1 ]]; then
+        return
+      fi
+      completion_arg_index=$((completion_arg_index + 1))
+      shift
+
+      ;;
+    esac
+  done
+
+  if [[ $completion_current == -* ]]; then
+    completion_flag_candidates --help "$completion_current" --help -h
+    completion_flag_candidates --project "$completion_current" --project -p
+    completion_flag_candidates --check "$completion_current" --check
+  fi
+
+  if [[ $completion_current != -* ]]; then
+    case "$completion_arg_index" in
+    0)
+      completion_candidates "$completion_current" none
+      ;;
+    esac
+  fi
+
+}
+
 dot_vault_completion() {
   local completion_current="$1"
   shift
@@ -3300,6 +3618,8 @@ initialize() {
   [ -t 0 ] || export HOMEBREW_NO_SUDO=1
   DEVBOX_REPO=https://github.com/rozsival/devbox.git
   STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+  # Projects and the ports moshi-hook may probe for their dev servers (lib/scan_ports.sh).
+  SCAN_PORTS_REGISTRY="$STATE_DIR/scan-ports"
   CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
   IDENTITIES_LIB="$HOME/.local/libexec/devbox-identities"
   OP_AGENT_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
@@ -3340,6 +3660,7 @@ run() {
   "brew") dot_brew_command ;;
   "macos") dot_macos_command ;;
   "identities") dot_identities_command ;;
+  "scan-ports") dot_scan_ports_command ;;
   "vault") dot_vault_command ;;
   "vault status") dot_vault_status_command ;;
   "vault pull") dot_vault_pull_command ;;
