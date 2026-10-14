@@ -45,6 +45,12 @@ doctor_system() {
       warn 'App Store apps missing'
       hint 'sign in to the App Store app, then: dot brew --mas'
     fi
+    if chatgpt_quarantined; then
+      warn 'ChatGPT Computer Use helper quarantined: Gatekeeper asks on every ChatGPT launch'
+      hint 'dot brew in a terminal granted App Management (Privacy & Security)'
+    elif [ -d "$CHATGPT_CUA_HELPER" ]; then
+      ok 'ChatGPT Computer Use helper not quarantined'
+    fi
   else
     bad 'Homebrew missing'
     hint "re-run install.sh: bin/dot itself needs Homebrew's bash"

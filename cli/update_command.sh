@@ -5,6 +5,7 @@ attempt brew update
 attempt brew upgrade --formula
 attempt brew upgrade --cask
 attempt brew bundle --file "$DOTFILES/Brewfile"
+chatgpt_unquarantine
 step mise
 attempt mise upgrade --yes
 step OMP

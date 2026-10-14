@@ -3,6 +3,7 @@ brew_env || die "Homebrew missing in $HOMEBREW_PREFIX: run install.sh"
 sudo -v
 step 'Packages (Brewfile)'
 brew bundle --file "$DOTFILES/Brewfile" || warn 'some Brewfile entries failed; fix them and re-run `dot brew`'
+chatgpt_unquarantine
 step 'Login shell'
 setup_shell
 step Dotfiles

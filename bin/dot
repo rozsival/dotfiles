@@ -192,7 +192,7 @@ dot_sync_usage() {
 dot_update_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot update\n\n"
-    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n\n"
+    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches and Homebrew's quarantine on ChatGPT's\n  Computer Use helper.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n\n"
   else
     printf "dot update - Upgrade everything installed.\n\n"
   fi
@@ -242,7 +242,12 @@ dot_link_usage() {
 }
 
 dot_brew_usage() {
-  printf "dot brew - Install what the Brewfile declares.\n\n"
+  if [[ -n $long_usage ]]; then
+    printf "dot brew\n\n"
+    printf "  Install what the Brewfile declares.\n  Then clears Homebrew's quarantine on ChatGPT's Computer Use helper, which\n  ChatGPT copies out on every launch (needs App Management for the terminal).\n\n"
+  else
+    printf "dot brew - Install what the Brewfile declares.\n\n"
+  fi
 
   printf "%s\n" "Usage:"
   printf "  dot brew [OPTIONS]\n"
@@ -577,7 +582,10 @@ normalize_input() {
 brew_bundle() {
   brew_env || die "Homebrew missing in $HOMEBREW_PREFIX: run install.sh"
   case "${1:-}" in
-  '') brew bundle --file "$DOTFILES/Brewfile" ;;
+  '')
+    brew bundle --file "$DOTFILES/Brewfile"
+    chatgpt_unquarantine
+    ;;
   --mas) brew bundle --file "$DOTFILES/Brewfile.mas" ;;
   --check)
     brew bundle check --file "$DOTFILES/Brewfile" --verbose
@@ -586,6 +594,26 @@ brew_bundle() {
   # Dry run on purpose: lists what `brew bundle cleanup --force` would remove.
   --cleanup) brew bundle cleanup --file "$DOTFILES/Brewfile" ;;
   esac
+}
+
+# ChatGPT copies this helper to ~/.codex/computer-use on every launch, and the
+# copy inherits the quarantine Homebrew put on the bundle: Gatekeeper asks again
+# each time, since approving marks only the copy the next launch replaces.
+# Homebrew 5+ has no --no-quarantine, so each cask upgrade brings it back.
+CHATGPT_CUA_HELPER='/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules/@oai/sky/Codex Computer Use.app'
+chatgpt_quarantined() { xattr -p com.apple.quarantine "$CHATGPT_CUA_HELPER" >/dev/null 2>&1; }
+
+# Only that notarized helper, never the whole app; a no-op when it is absent or
+# clean. macOS denies the write without App Management (an agent's shell, a
+# terminal not granted it): warn, never fail the caller.
+chatgpt_unquarantine() {
+  chatgpt_quarantined || return 0
+  if xattr -dr com.apple.quarantine "$CHATGPT_CUA_HELPER" 2>/dev/null; then
+    ok 'ChatGPT Computer Use helper: quarantine cleared'
+  else
+    warn 'ChatGPT Computer Use helper still quarantined: Gatekeeper asks on every ChatGPT launch'
+    hint 'grant your terminal App Management (Privacy & Security), then run dot brew in it'
+  fi
 }
 
 # How a fresh login shell resolves a command (what panes and agents will get),
@@ -632,6 +660,12 @@ doctor_system() {
     else
       warn 'App Store apps missing'
       hint 'sign in to the App Store app, then: dot brew --mas'
+    fi
+    if chatgpt_quarantined; then
+      warn 'ChatGPT Computer Use helper quarantined: Gatekeeper asks on every ChatGPT launch'
+      hint 'dot brew in a terminal granted App Management (Privacy & Security)'
+    elif [ -d "$CHATGPT_CUA_HELPER" ]; then
+      ok 'ChatGPT Computer Use helper not quarantined'
     fi
   else
     bad 'Homebrew missing'
@@ -1380,6 +1414,7 @@ dot_setup_command() {
   sudo -v
   step 'Packages (Brewfile)'
   brew bundle --file "$DOTFILES/Brewfile" || warn 'some Brewfile entries failed; fix them and re-run `dot brew`'
+  chatgpt_unquarantine
   step 'Login shell'
   setup_shell
   step Dotfiles
@@ -1471,6 +1506,7 @@ dot_update_command() {
   attempt brew upgrade --formula
   attempt brew upgrade --cask
   attempt brew bundle --file "$DOTFILES/Brewfile"
+  chatgpt_unquarantine
   step mise
   attempt mise upgrade --yes
   step OMP
