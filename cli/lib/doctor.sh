@@ -304,6 +304,14 @@ doctor_agents() {
     done < <(printf '%s\n' "$shadowed" | awk '{ a[$1] = a[$1] " " $2 } END { for (d in a) print d a[d] }')
     hint 'uninstall those copies (or move them aside); Homebrew installs and upgrades its own'
   fi
+  local herdr_server
+  herdr_server="$(herdr_stale_server)"
+  if [ -n "$herdr_server" ]; then
+    warn "herdr server $herdr_server is older than the installed $(herdr --version | awk '{print $2}')"
+    hint "$HERDR_RESTART_HINT"
+  elif have herdr; then
+    ok 'herdr server runs the installed binary (or is not running)'
+  fi
   if brew services list 2>/dev/null | awk '$1 == "moshi-hook" {print $2}' | grep started >/dev/null; then
     if moshi-hook status 2>/dev/null | grep 'status:[[:space:]]*paired' >/dev/null; then ok 'moshi-hook running and paired'; else
       bad 'moshi-hook not paired'

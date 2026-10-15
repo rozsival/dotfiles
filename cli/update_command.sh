@@ -23,7 +23,7 @@ attempt moshi-hook install --target omp,claude
 attempt brew services restart moshi-hook
 rm -rf "$CACHE_DIR"
 ok 'completion caches cleared; they rebuild in the next shell'
-[ $FAILS = 0 ] || {
-  printf '\n%s%s✗ %d update step(s) failed%s; the rest ran, see ✗ above\n' "$B" "$RED" "$FAILS" "$RST"
-  return 1
-}
+[ $FAILS = 0 ] || printf '\n%s%s✗ %d update step(s) failed%s; the rest ran, see ✗ above\n' "$B" "$RED" "$FAILS" "$RST"
+# Last, after the summary: from a herdr pane the restart ends this process.
+herdr_restart
+[ $FAILS = 0 ]

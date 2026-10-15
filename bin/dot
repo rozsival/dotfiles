@@ -168,7 +168,7 @@ dot_doctor_usage() {
 dot_sync_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot sync\n\n"
-    printf "  Bring this Mac up to what origin has.\n  Fast-forwards this repo (refusing uncommitted changes), then runs \`dot link\`,\n  \`dot brew\` and \`dot macos --check\`.\n\n"
+    printf "  Bring this Mac up to what origin has.\n  Fast-forwards this repo (refusing uncommitted changes), then runs \`dot link\`,\n  \`dot brew\` and \`dot macos --check\`. Offers to restart a herdr server left on\n  an older binary.\n\n"
   else
     printf "dot sync - Bring this Mac up to what origin has.\n\n"
   fi
@@ -192,7 +192,7 @@ dot_sync_usage() {
 dot_update_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot update\n\n"
-    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches and Homebrew's quarantine on ChatGPT's\n  Computer Use helper.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n\n"
+    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches and Homebrew's quarantine on ChatGPT's\n  Computer Use helper.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n  Last, when Homebrew upgraded herdr under a running server, asks before \`herdr\n  server stop\` (every pane process ends; OMP and Claude sessions resume on the\n  next \`herdr\`); without a terminal it only names the command.\n\n"
   else
     printf "dot update - Upgrade everything installed.\n\n"
   fi
@@ -244,7 +244,7 @@ dot_link_usage() {
 dot_brew_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot brew\n\n"
-    printf "  Install what the Brewfile declares.\n  Then clears Homebrew's quarantine on ChatGPT's Computer Use helper, which\n  ChatGPT copies out on every launch (needs App Management for the terminal).\n\n"
+    printf "  Install what the Brewfile declares.\n  Then clears Homebrew's quarantine on ChatGPT's Computer Use helper, which\n  ChatGPT copies out on every launch (needs App Management for the terminal),\n  and offers to restart a herdr server left on an older binary.\n\n"
   else
     printf "dot brew - Install what the Brewfile declares.\n\n"
   fi
@@ -920,6 +920,14 @@ doctor_agents() {
     done < <(printf '%s\n' "$shadowed" | awk '{ a[$1] = a[$1] " " $2 } END { for (d in a) print d a[d] }')
     hint 'uninstall those copies (or move them aside); Homebrew installs and upgrades its own'
   fi
+  local herdr_server
+  herdr_server="$(herdr_stale_server)"
+  if [ -n "$herdr_server" ]; then
+    warn "herdr server $herdr_server is older than the installed $(herdr --version | awk '{print $2}')"
+    hint "$HERDR_RESTART_HINT"
+  elif have herdr; then
+    ok 'herdr server runs the installed binary (or is not running)'
+  fi
   if brew services list 2>/dev/null | awk '$1 == "moshi-hook" {print $2}' | grep started >/dev/null; then
     if moshi-hook status 2>/dev/null | grep 'status:[[:space:]]*paired' >/dev/null; then ok 'moshi-hook running and paired'; else
       bad 'moshi-hook not paired'
@@ -949,6 +957,47 @@ doctor_agents() {
 # their own way, and comments are not settings.
 omp_preset() {
   yq -o=json -I=0 'sort_keys(..)' "$1" 2>/dev/null
+}
+
+#
+# Homebrew replaces the binary but the running server keeps the old one, and
+# clients (Moshi's included) then report a client/server version mismatch.
+# Live handoff (`herdr update --handoff`) only exists for herdr's own installer,
+# so the one way to the new server is `herdr server stop`: it ends every pane
+# process. OMP and Claude panes resume their sessions on the next `herdr`;
+# shells and whatever runs in them do not. Hence a question, never automatic.
+
+HERDR_RESTART_HINT='herdr server stop, then herdr (ends every pane process; OMP and Claude sessions resume)'
+
+# The running server's version when it runs a binary older than the installed
+# one; empty when it is current, not running, or herdr is missing.
+herdr_stale_server() {
+  have herdr || return 0
+  herdr status --json 2>/dev/null |
+    jq -r 'select(.server.running and (.server.server_binary_stale or .server.restart_needed)) | .server.version' 2>/dev/null ||
+    true
+}
+
+# Offers the restart on a terminal; otherwise, or when declined, names the command.
+# Last step of a command: run from a herdr pane, the stop ends this process too.
+herdr_restart() {
+  local server client answer
+  server="$(herdr_stale_server)"
+  [ -n "$server" ] || return 0
+  client="$(herdr --version | awk '{print $2}')"
+  step herdr
+  warn "herdr server $server is older than the installed $client; clients report a version mismatch"
+  if [ -t 0 ] && [ -t 1 ]; then
+    read -r -p "    Restart the herdr server now? Every pane process ends. [y/N] " answer || answer=''
+    case "$answer" in
+    [yY]*)
+      [ "${HERDR_ENV:-}" != 1 ] || info 'this pane is a herdr pane and closes with the server; run herdr to start the new one'
+      if herdr server stop >/dev/null; then ok "herdr server stopped; the next herdr starts $client"; else bad '`herdr server stop` failed'; fi
+      return 0
+      ;;
+    esac
+  fi
+  hint "$HERDR_RESTART_HINT"
 }
 
 # Renders the laptop-side identity config devbox leaves to you (devbox
@@ -1494,6 +1543,7 @@ dot_sync_command() {
     printf '%s\n' "$drift"
     warn 'macOS defaults drift: dot macos applies them'
   fi
+  herdr_restart
 
 }
 
@@ -1524,10 +1574,10 @@ dot_update_command() {
   attempt brew services restart moshi-hook
   rm -rf "$CACHE_DIR"
   ok 'completion caches cleared; they rebuild in the next shell'
-  [ $FAILS = 0 ] || {
-    printf '\n%s%s✗ %d update step(s) failed%s; the rest ran, see ✗ above\n' "$B" "$RED" "$FAILS" "$RST"
-    return 1
-  }
+  [ $FAILS = 0 ] || printf '\n%s%s✗ %d update step(s) failed%s; the rest ran, see ✗ above\n' "$B" "$RED" "$FAILS" "$RST"
+  # Last, after the summary: from a herdr pane the restart ends this process.
+  herdr_restart
+  [ $FAILS = 0 ]
 
 }
 
@@ -1544,6 +1594,8 @@ dot_brew_command() {
   [ -z "${args[--check]:-}" ] || mode=--check
   [ -z "${args[--cleanup]:-}" ] || mode=--cleanup
   brew_bundle "$mode"
+  # `brew bundle` upgrades outdated formulae, herdr included.
+  [ -n "$mode" ] || herdr_restart
 
 }
 

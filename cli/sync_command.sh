@@ -17,3 +17,4 @@ else
   printf '%s\n' "$drift"
   warn 'macOS defaults drift: dot macos applies them'
 fi
+herdr_restart
