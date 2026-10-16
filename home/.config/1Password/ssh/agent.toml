@@ -1,0 +1,21 @@
+# Which 1Password vaults the SSH agent serves (https://developer.1password.com/docs/ssh/agent/config).
+# Without this file it serves only Personal, Private and Employee vaults, missing the personal
+# account's `Work` vault.
+# Accounts by sign-in address, so a renamed account doesn't drop its keys. ~/.ssh/config picks the
+# key per host (IdentityFile <pub> + IdentitiesOnly), so the order here is only what an unmatched
+# host is offered. Verify: SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock ssh-add -l
+
+# Personal: auth + signing, Devbox Laptop, iPhone
+[[ssh-keys]]
+vault = "Work"
+account = "my.1password.com"
+
+# ApiTree: auth + signing
+[[ssh-keys]]
+vault = "Employee"
+account = "apitree.1password.eu"
+
+# Sitefellows: auth + signing
+[[ssh-keys]]
+vault = "Employee"
+account = "sitefellows.1password.eu"

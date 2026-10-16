@@ -132,7 +132,7 @@ commands, options, allowed values and `vault.list` titles: the completion asks `
 
 | Kind     | Lives in                      | Mechanism                                                            | Examples                                                                      |
 | -------- | ----------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Tracked  | `home/`                       | Symlinked file by file by `dot link`; editing in `~` edits the repo  | bash, shared git config, `~/.ssh/config`, Ghostty, mise                       |
+| Tracked  | `home/`                       | Symlinked file by file by `dot link`; editing in `~` edits the repo  | bash, shared git config, `~/.ssh/config`, 1Password `agent.toml`, Ghostty     |
 | Seeded   | `seed/`                       | Copied once if absent; from then on the tool owns it                 | herdr                                                                         |
 | Rendered | nowhere in git                | `dot identities` builds them from `~/.config/devbox/identities.conf` | `~/.gitconfig`, GitHub SSH blocks, `allowed_signers`, `*.pub`                 |
 | Secret   | 1Password `Workstation` vault | `dot vault pull`/`push`, listed in [`vault.list`](vault.list)        | `identities.conf`, `secrets.env`, GitHub App keys, `.npmrc`, OMP `models.yml` |
@@ -172,7 +172,8 @@ kept just in case. Everything works with SIP enabled, and `dot macos --check` is
 
 devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities` and
 `~/.local/bin/devbox*`. This repo never writes there, except to restore `identities.conf` and `secrets.env` from
-1Password. It owns what devbox leaves to the laptop: `~/.ssh/config` (tracked), the files `dot identities` renders
+1Password. It owns what devbox leaves to the laptop: `~/.ssh/config` and the 1Password SSH agent's vault list
+(`~/.config/1Password/ssh/agent.toml`), both tracked; the files `dot identities` renders
 (`~/.gitconfig`, `~/.config/git/identities/*`, `~/.ssh/config.d/identities`, the `id_*`/`signing_*.pub` selectors,
 `allowed_signers`) and the PATH line that puts the launchers first. devbox's laptop docs describe those files as
 hand-written; here they are not. The OMP preset is devbox's (`home/.omp/agent/config.yml`), the same file the devbox

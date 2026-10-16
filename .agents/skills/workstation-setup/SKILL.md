@@ -41,12 +41,15 @@ The 1Password agent socket, for commands that need it explicitly:
 
 Everything after this depends on it. The person:
 
-1. Opens 1Password, signs in to both accounts (personal `my.1password.com`, work `apitree.1password.eu`).
+1. Opens 1Password, signs in to every account (personal `my.1password.com`, work `apitree.1password.eu` and
+   `sitefellows.1password.eu`).
 2. Settings → Security: Touch ID on.
 3. Settings → Developer: **Use the SSH agent** on, **Integrate with 1Password CLI** on.
 
-Verify: doctor's `1Password SSH agent` and `op CLI knows my.1password.com`; `SSH_AUTH_SOCK=… ssh-add -l`
-lists the keys (RSA personal key, ED25519 identity/signing keys, `Devbox Laptop`).
+Which vaults the agent serves is `~/.config/1Password/ssh/agent.toml`, tracked (`home/`, symlinked by
+`dot link`): a key in a vault or account it doesn't list is invisible to ssh. Verify: doctor's
+`1Password SSH agent` and `op CLI knows my.1password.com`; `SSH_AUTH_SOCK=… ssh-add -l` lists the auth and
+signing key of each identity plus `Devbox Laptop`.
 
 ## Phase 2 - restore files from 1Password
 
@@ -99,7 +102,8 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 ## Phase 5 - GitHub
 
 1. The person runs `gh auth login --hostname github.com --git-protocol ssh --web`.
-2. SSH: `ssh -T git@github.com` (personal) and `ssh -P apitree -T git@github.com` (work) each answer
+2. SSH: `ssh -T git@github.com` (personal), `ssh -P apitree -T git@github.com` and
+   `ssh -P sitefellows -T git@github.com` each answer
    `Hi <login>!` after a 1Password approval. The keys are the same 1Password items as before, so they
    are already registered on GitHub. Only a brand-new key needs
    `gh ssh-key add ~/.ssh/<file>.pub --type authentication` and, for signing keys, `--type signing` (on the
