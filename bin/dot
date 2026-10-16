@@ -83,7 +83,7 @@ dot_usage() {
 dot_setup_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot setup\n\n"
-    printf "  Everything automatable; idempotent.\n  Brewfile, Homebrew bash as login shell, \`dot link\`, mise and rustup runtimes,\n  gcloud components, devbox clone and its OMP preset, OMP, Claude Code, agent\n  skills, moshi-hook, Touch ID for sudo, macOS defaults. install.sh runs it once\n  Xcode CLT, Homebrew and Homebrew bash exist. Run it in your own terminal: it\n  asks for sudo.\n\n"
+    printf "  Everything automatable; idempotent.\n  Brewfile, Homebrew bash as login shell, \`dot link\`, mise and rustup runtimes,\n  Terraform and OpenTofu via tenv, gcloud components, devbox clone and its OMP\n  preset, OMP, Claude Code, agent skills, moshi-hook, Touch ID for sudo, macOS\n  defaults. install.sh runs it once Xcode CLT, Homebrew and Homebrew bash exist.\n  Run it in your own terminal: it asks for sudo.\n\n"
   else
     printf "dot setup - Everything automatable; idempotent.\n\n"
   fi
@@ -192,7 +192,7 @@ dot_sync_usage() {
 dot_update_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot update\n\n"
-    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches and Homebrew's quarantine on ChatGPT's\n  Computer Use helper.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n  Last, when Homebrew upgraded herdr under a running server, asks before \`herdr\n  server stop\` (every pane process ends; OMP and Claude sessions resume on the\n  next \`herdr\`); without a terminal it only names the command.\n\n"
+    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, Terraform and OpenTofu (tenv's default moves to\n  the latest stable), OMP, Claude Code, agent skills and moshi-hook; clears the\n  shell's completion caches and Homebrew's quarantine on ChatGPT's Computer Use\n  helper.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n  Last, when Homebrew upgraded herdr under a running server, asks before \`herdr\n  server stop\` (every pane process ends; OMP and Claude sessions resume on the\n  next \`herdr\`); without a terminal it only names the command.\n\n"
   else
     printf "dot update - Upgrade everything installed.\n\n"
   fi
@@ -910,6 +910,17 @@ doctor_agents() {
     bad 'no Node from mise'
     hint 'mise install'
   fi
+  local tool bin file version
+  for tool in tf tofu; do
+    bin=terraform
+    [ $tool = tofu ] && bin=tofu
+    file="$(tenv_version_file $tool)"
+    version="$(cat "$file" 2>/dev/null)"
+    if [ -n "$version" ] && [ -x "${file%/*}/$version/$bin" ]; then ok "$bin $version via tenv"; else
+      bad "no default $bin version in tenv"
+      hint "tenv $tool use --force-remote --install latest-stable"
+    fi
+  done
   # A standalone installer's copy ahead of Homebrew's on the PATH runs while
   # `brew upgrade` updates the one nobody runs.
   local shadowed dir names
@@ -1299,6 +1310,13 @@ setup_runtimes() {
     rustup default stable
   fi
   ok "$(rustup default)"
+  # tenv's terraform and tofu proxies fail until a default version is set. Only
+  # when none is, so a chosen default stays; `dot update` moves to the latest.
+  local tool
+  for tool in tf tofu; do
+    [ -s "$(tenv_version_file "$tool")" ] || tenv --quiet "$tool" use --force-remote --install latest-stable
+  done
+  ok "terraform $(<"$(tenv_version_file tf)"), tofu $(<"$(tenv_version_file tofu)") via tenv"
   # The Homebrew cask ships only gcloud/gsutil/bq; kubectl against GKE needs the
   # auth plugin. Installed components land in share/google-cloud-sdk/bin (env.sh).
   # shellcheck disable=SC2086 # a list of component ids, split on purpose
@@ -1384,6 +1402,13 @@ real_omp() {
     }
   done
   return 1
+}
+
+# Where tenv keeps the default version of `tf` (Terraform) or `tofu` (OpenTofu).
+tenv_version_file() {
+  local dir=Terraform
+  [ "$1" = tofu ] && dir=OpenTofu
+  printf '%s' "${TENV_ROOT:-$HOME/.tenv}/$dir/version"
 }
 
 vault_entries() { grep -vE '^[[:space:]]*(#|$)' "$DOTFILES/vault.list"; }
@@ -1559,6 +1584,9 @@ dot_update_command() {
   chatgpt_unquarantine
   step mise
   attempt mise upgrade --yes
+  step tenv
+  attempt tenv --quiet tf use --force-remote --install latest-stable
+  attempt tenv --quiet tofu use --force-remote --install latest-stable
   step OMP
   # By name, so through the devbox launcher once installed: for `update` it
   # drops its own PATH entries and omp's updater finds the real install. The

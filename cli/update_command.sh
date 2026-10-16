@@ -8,6 +8,9 @@ attempt brew bundle --file "$DOTFILES/Brewfile"
 chatgpt_unquarantine
 step mise
 attempt mise upgrade --yes
+step tenv
+attempt tenv --quiet tf use --force-remote --install latest-stable
+attempt tenv --quiet tofu use --force-remote --install latest-stable
 step OMP
 # By name, so through the devbox launcher once installed: for `update` it
 # drops its own PATH entries and omp's updater finds the real install. The

@@ -294,6 +294,17 @@ doctor_agents() {
     bad 'no Node from mise'
     hint 'mise install'
   fi
+  local tool bin file version
+  for tool in tf tofu; do
+    bin=terraform
+    [ $tool = tofu ] && bin=tofu
+    file="$(tenv_version_file $tool)"
+    version="$(cat "$file" 2>/dev/null)"
+    if [ -n "$version" ] && [ -x "${file%/*}/$version/$bin" ]; then ok "$bin $version via tenv"; else
+      bad "no default $bin version in tenv"
+      hint "tenv $tool use --force-remote --install latest-stable"
+    fi
+  done
   # A standalone installer's copy ahead of Homebrew's on the PATH runs while
   # `brew upgrade` updates the one nobody runs.
   local shadowed dir names

@@ -7,7 +7,6 @@
 # not the whole tap, and `brew bundle cleanup --force` resets Homebrew's trust
 # store to exactly what this file declares.
 tap "azure/kubelogin"
-tap "hashicorp/tap"
 tap "mongodb/brew"
 tap "rjyo/moshi"
 tap "superhq-ai/tap"
@@ -76,7 +75,7 @@ brew "azure/kubelogin/kubelogin", trusted: true
 brew "helm"
 brew "k9s"
 brew "kubectx"
-brew "hashicorp/tap/terraform", trusted: true
+brew "tenv" # terraform and tofu proxies; versions in ~/.tenv (`dot setup`, `dot update`)
 brew "mongosh"
 brew "mongodb/brew/mongodb-database-tools", trusted: true
 cask "gcloud-cli" # replaces ~/google-cloud-sdk (formerly the google-cloud-sdk cask)

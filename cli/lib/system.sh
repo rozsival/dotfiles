@@ -24,3 +24,10 @@ real_omp() {
   done
   return 1
 }
+
+# Where tenv keeps the default version of `tf` (Terraform) or `tofu` (OpenTofu).
+tenv_version_file() {
+  local dir=Terraform
+  [ "$1" = tofu ] && dir=OpenTofu
+  printf '%s' "${TENV_ROOT:-$HOME/.tenv}/$dir/version"
+}

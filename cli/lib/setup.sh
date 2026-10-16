@@ -15,6 +15,13 @@ setup_runtimes() {
     rustup default stable
   fi
   ok "$(rustup default)"
+  # tenv's terraform and tofu proxies fail until a default version is set. Only
+  # when none is, so a chosen default stays; `dot update` moves to the latest.
+  local tool
+  for tool in tf tofu; do
+    [ -s "$(tenv_version_file "$tool")" ] || tenv --quiet "$tool" use --force-remote --install latest-stable
+  done
+  ok "terraform $(<"$(tenv_version_file tf)"), tofu $(<"$(tenv_version_file tofu)") via tenv"
   # The Homebrew cask ships only gcloud/gsutil/bq; kubectl against GKE needs the
   # auth plugin. Installed components land in share/google-cloud-sdk/bin (env.sh).
   # shellcheck disable=SC2086 # a list of component ids, split on purpose
