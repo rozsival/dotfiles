@@ -15,7 +15,7 @@ agent shell), then take what remains.
 `install.sh` already installed Xcode CLT, Homebrew and Homebrew bash (`bin/dot` needs it), and `bin/dot
 setup` ran: `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, Terraform and OpenTofu via tenv, the devbox clone
 (HTTPS) and its OMP preset in `~/.omp/agent/config.yml`, OMP, Claude Code,
-global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults. Re-run a
+agent-browser CLI, global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults. Re-run a
 single piece (`dot brew`, `dot link`, `dot macos`) rather than all of `dot setup`; `dot <command> --help`
 lists a command's options.
 

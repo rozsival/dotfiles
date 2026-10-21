@@ -375,6 +375,11 @@ doctor_agents() {
       hint "a change made in OMP: cp it over the template, make fmt and commit in devbox, then devbox sync omp; a change in devbox: devbox sync omp"
     fi
   fi
+  [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || {
+    bad 'agent-browser missing'
+    hint 'dot doctor --fix'
+    fix agents
+  }
   local pair skill
   for pair in $SKILLS; do
     skill=${pair#*:}

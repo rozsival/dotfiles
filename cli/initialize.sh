@@ -22,6 +22,7 @@ OP_AGENT_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.s
 OP_SSH_SIGN=/Applications/1Password.app/Contents/MacOS/op-ssh-sign
 # Same pins as devbox's container/skills.sh, so laptop and devbox agents match.
 SKILLS_CLI_VERSION=1.5.26
+AGENT_BROWSER_VERSION=0.37.1
 SKILLS="anthropics/skills:skill-creator vercel-labs/skills:find-skills herdrdev/herdr:herdr max-sixty/worktrunk:worktrunk"
 GCLOUD_COMPONENTS='gke-gcloud-auth-plugin alpha beta cloud-sql-proxy'
 
