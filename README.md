@@ -22,15 +22,15 @@ test for both.
 
 ## ✨ Highlights
 
-| Feature                  | What it gives you                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| **One-command install**  | `install.sh` gets git, Homebrew and its bash, clones the repo and runs `dot setup`: shell, links, agents     |
-| **Agent-guided rest**    | `dot agent` hands the manual steps to OMP or Claude Code; you click and approve, the agent verifies          |
-| **Acceptance test**      | `dot doctor` checks the whole machine, and every ✗ comes with the command that fixes it                      |
-| **No private keys**      | SSH and commit signing go through the 1Password agent; `~/.ssh` holds only `.pub` key selectors              |
-| **Secrets in 1Password** | Credential files are kept as 1Password Documents and restored with `dot vault pull`                          |
-| **Rendered identities**  | `~/.gitconfig` and per-account SSH blocks come from devbox's `identities.conf`, never from git               |
-| **Drift detection**      | `dot doctor` plus read-only `--check` modes for macOS defaults, Brewfiles and identities show what has moved |
+| Feature                  | What it gives you                                                                                              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| **One-command install**  | `install.sh` gets git, Homebrew and its bash, clones the repo and runs `dot setup`: shell, links, agents       |
+| **Agent-guided rest**    | `dot agent` hands the manual steps to OMP or Claude Code; you click and approve, the agent verifies            |
+| **Acceptance test**      | `dot doctor` checks the whole machine, every ✗ comes with its fix, and `--fix` runs the ones dot can do itself |
+| **No private keys**      | SSH and commit signing go through the 1Password agent; `~/.ssh` holds only `.pub` key selectors                |
+| **Secrets in 1Password** | Credential files are kept as 1Password Documents and restored with `dot vault pull`                            |
+| **Rendered identities**  | `~/.gitconfig` and per-account SSH blocks come from devbox's `identities.conf`, never from git                 |
+| **Drift detection**      | `dot doctor` plus read-only `--check` modes for macOS defaults, Brewfiles and identities show what has moved   |
 
 > [!IMPORTANT]
 > This repo is public and holds no secrets. A file that contains a credential gets a line in [`vault.list`](vault.list)
@@ -113,7 +113,7 @@ commands, options, allowed values and `vault.list` titles: the completion asks `
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `dot setup`                               | Everything automatable; idempotent                                                                                                                                                                                                                                                                                         |
 | `dot agent [omp\|claude]`                 | Starts the guided setup in an agent harness (default: OMP)                                                                                                                                                                                                                                                                 |
-| `dot doctor`                              | Checks the whole machine and exits 1 while anything fails                                                                                                                                                                                                                                                                  |
+| `dot doctor [--fix]`                      | Checks the whole machine and exits 1 while anything fails; `--fix` then offers to run the fixes dot can do itself (Brewfile, links, defaults, skills…) and checks again                                                                                                                                                    |
 | `dot sync`                                | Fast-forwards this repo from origin, then `dot link`, `dot brew` and `dot macos --check`; offers to restart a stale herdr server                                                                                                                                                                                           |
 | `dot update`                              | Upgrades Homebrew, mise, Terraform and OpenTofu (tenv), OMP, Claude Code, skills and moshi-hook; clears completion caches and ChatGPT's helper quarantine. A failed step doesn't stop the rest; exits 1 at the end. Last, asks before restarting a herdr server Homebrew left on an older binary (ends every pane process) |
 | `dot link [--dry-run]`                    | Symlinks `home/` into `~`, backing up what it replaces; copies `seed/` where absent                                                                                                                                                                                                                                        |

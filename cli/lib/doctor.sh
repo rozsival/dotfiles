@@ -25,6 +25,79 @@ fresh_shadowed() {
       done' _ "$HOMEBREW_PREFIX"
 }
 
+# Failures dot can repair itself, recorded next to their hint as `fix <name>
+# [args]`; `dot doctor --fix` runs them as fix_<name>. Run in FIX_ORDER, not
+# check order, so what a later fix needs (Homebrew's tools, the linked env.sh,
+# the devbox clone and its identity renderer) is there first.
+FIXES=()
+FIX_ORDER='brew shell link devbox vault chmod identities runtimes agents touchid macos'
+
+fix() {
+  local entry f
+  entry="$(printf '%q ' "$@")"
+  entry=${entry% }
+  for f in "${FIXES[@]}"; do [ "$f" = "$entry" ] && return 0; done
+  FIXES+=("$entry")
+}
+
+fix_brew() { brew_bundle ''; }
+fix_shell() { setup_shell; }
+fix_link() { link_home 0; }
+fix_devbox() {
+  [ -d "$DEVBOX_DIR/.git" ] || git clone "$DEVBOX_REPO" "$DEVBOX_DIR"
+  [ $# = 0 ] || (cd "$DEVBOX_DIR" && ./bin/devbox "$@")
+}
+# vault_sync's status is the FAILS count, and doctor's own failures are in it.
+fix_vault() {
+  local FAILS=0
+  vault_sync pull 0 "$1"
+}
+fix_chmod() { chmod "$1" "$2"; }
+fix_identities() { identities_sync 0; }
+fix_runtimes() { setup_runtimes; }
+fix_agents() { setup_agents; }
+fix_touchid() { setup_touchid; }
+fix_macos() { "$DOTFILES/macos/defaults.sh"; }
+
+# Each fix in a subshell with errexit back on (it is off inside `||`): its first
+# failing command stops that fix only, and the rest still run.
+doctor_fix() {
+  local name entry rc
+  brew_env || true
+  shell_env
+  for name in $FIX_ORDER; do
+    for entry in "${FIXES[@]}"; do
+      [ "${entry%% *}" = "$name" ] || continue
+      step "fix: $entry"
+      set +e
+      (
+        set -e
+        eval "fix_$entry"
+      )
+      rc=$?
+      set -e
+      [ $rc = 0 ] || bad "fix $entry failed (exit $rc)"
+    done
+  done
+}
+
+doctor_checks() {
+  doctor_system
+  doctor_dotfiles
+  doctor_identity
+  doctor_devbox
+  doctor_agents
+}
+
+doctor_summary() {
+  printf '\n'
+  if [ $FAILS = 0 ]; then
+    printf '%s%s✓ all checks passed%s (%d warning(s))\n' "$B" "$GRN" "$RST" "$WARNS"
+  else
+    printf '%s%s✗ %d check(s) failing%s, %d warning(s)\n' "$B" "$RED" "$FAILS" "$RST" "$WARNS"
+  fi
+}
+
 doctor_system() {
   step System
   ok "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)), $(uname -m)"
@@ -38,6 +111,7 @@ doctor_system() {
     else
       bad 'Brewfile not satisfied'
       hint 'dot brew --check lists what is missing; run dot brew in your own terminal (casks may ask for Touch ID; granting Ghostty App Management avoids it)'
+      fix brew
     fi
     if brew bundle check --file "$DOTFILES/Brewfile.mas" --no-upgrade >/dev/null 2>&1; then
       ok 'App Store apps (Brewfile.mas)'
@@ -57,7 +131,8 @@ doctor_system() {
   fi
   [ "$(login_shell)" = "$HOMEBREW_PREFIX/bin/bash" ] && ok "login shell $HOMEBREW_PREFIX/bin/bash" || {
     bad "login shell is $(login_shell)"
-    hint 'dot setup'
+    hint 'dot doctor --fix'
+    fix shell
   }
   # `grep >/dev/null`, never `grep -q`, after a pipe: -q exits on the first
   # match, the writer dies of SIGPIPE, and pipefail turns a pass into a fail.
@@ -68,7 +143,8 @@ doctor_system() {
   csrutil status | grep enabled >/dev/null && ok 'System Integrity Protection' || bad 'SIP disabled: re-enable from Recovery (csrutil enable)'
   grep -qs '^auth[[:space:]].*pam_tid.so' /etc/pam.d/sudo_local && ok 'Touch ID for sudo' || {
     warn 'Touch ID for sudo off'
-    hint 'dot setup'
+    hint 'dot doctor --fix'
+    fix touchid
   }
   local drift
   if drift="$("$DOTFILES/macos/defaults.sh" --check 2>&1)"; then
@@ -76,6 +152,7 @@ doctor_system() {
   else
     bad "macOS defaults: $(printf '%s\n' "$drift" | tail -1)"
     hint 'dot macos --check shows each; dot macos applies them'
+    fix macos
   fi
 }
 
@@ -92,12 +169,14 @@ doctor_dotfiles() {
   [ $missing = 0 ] && ok 'home/ linked into ~' || {
     bad "$missing file(s) not linked"
     hint 'dot link'
+    fix link
   }
   while IFS= read -r -d '' src; do
     rel=${src#"$DOTFILES/seed/"}
     [ -e "$HOME/$rel" ] || {
       bad "seed missing: ~/$rel"
       hint 'dot link'
+      fix link
     }
   done < <(find "$DOTFILES/seed" -type f ! -name .DS_Store -print0)
   dirty="$(git -C "$DOTFILES" status --porcelain -- home seed 2>/dev/null)"
@@ -155,9 +234,11 @@ doctor_identity() {
     if [ ! -f "$path" ]; then
       bad "vault file missing: $(tilde "$path")"
       hint "dot vault pull $title"
+      fix vault "$title"
     elif actual="$(/usr/bin/stat -f %Lp "$path")" && [ "$actual" != "$mode" ]; then
       bad "$(tilde "$path") is mode $actual, want $mode"
       hint "chmod $mode $(tilde "$path")"
+      fix chmod "$mode" "$path"
     fi
   done < <(vault_entries)
   local keys
@@ -171,9 +252,11 @@ doctor_identity() {
   if [ ! -r "$IDENTITIES_LIB" ]; then
     bad 'devbox-identities missing'
     hint "git clone $DEVBOX_REPO $(tilde "$DEVBOX_DIR") && cd $(tilde "$DEVBOX_DIR") && ./bin/devbox agent install"
+    fix devbox agent install
   elif [ ! -r "$HOME/.config/devbox/identities.conf" ]; then
     bad 'no identities.conf'
     hint 'dot vault pull devbox/identities.conf'
+    fix vault devbox/identities.conf
   else
     local slug pub
     for slug in $("$IDENTITIES_LIB" list); do
@@ -181,6 +264,7 @@ doctor_identity() {
         [ -f "$HOME/.ssh/$pub" ] || {
           bad "missing ~/.ssh/$pub"
           hint 'dot identities writes it from identities.conf'
+          fix identities
         }
       done
     done
@@ -188,6 +272,7 @@ doctor_identity() {
     if (identities_sync 1) >/dev/null 2>&1; then ok 'git + ssh identity config rendered and current'; else
       bad 'identity config missing or stale'
       hint 'dot identities'
+      fix identities
     fi
   fi
   [ -f "$HOME/.ssh/devbox.pub" ] && ok 'devbox key: ~/.ssh/devbox.pub' || {
@@ -211,10 +296,12 @@ doctor_devbox() {
   [ -d "$DEVBOX_DIR/.git" ] && ok "devbox repo at $(tilde "$DEVBOX_DIR")" || {
     bad 'devbox repo missing'
     hint "git clone $DEVBOX_REPO $(tilde "$DEVBOX_DIR")"
+    fix devbox
   }
   [ -L "$HOME/.local/bin/devbox" ] && [ "$HOME/.local/bin/devbox" -ef "$DEVBOX_DIR/bin/devbox" ] && ok 'devbox command on the PATH' || {
     bad "$(tilde "$HOME/.local/bin/devbox") is not a link to $(tilde "$DEVBOX_DIR")/bin/devbox"
     hint "cd $(tilde "$DEVBOX_DIR") && ./bin/devbox install"
+    fix devbox install
   }
   # deploy and doctor laptop take the workstation alias from the checkout's
   # gitignored .push.env, so a new Mac starts without it.
@@ -229,6 +316,7 @@ doctor_devbox() {
     if [ "$got" = "$want" ]; then ok "$cmd -> devbox launcher"; else
       bad "$cmd resolves to ${got:-nothing}, not the devbox launcher"
       hint "cd $(tilde "$DEVBOX_DIR") && ./bin/devbox agent install"
+      fix devbox agent install
     fi
   done
   if have herdr && herdr machine list 2>/dev/null | awk -F'\t' '$3 == "devbox"' | grep . >/dev/null; then ok 'herdr machine devbox'; else
@@ -243,7 +331,8 @@ doctor_agents() {
   local bin
   bin="$(real_omp)" && ok "omp $("$bin" --version 2>/dev/null | head -1)" || {
     bad 'omp missing'
-    hint 'dot setup'
+    hint 'dot doctor --fix'
+    fix agents
   }
   # Exit status only: the token itself must never reach the output. Skipped
   # without omp: 'omp missing' already names the fix.
@@ -255,7 +344,8 @@ doctor_agents() {
   fi
   [ -x "$HOME/.local/bin/claude" ] && ok "claude $("$HOME/.local/bin/claude" --version 2>/dev/null | head -1)" || {
     bad 'claude missing'
-    hint 'dot setup'
+    hint 'dot doctor --fix'
+    fix agents
   }
   # /login records the account (no secret) in ~/.claude.json; the token itself
   # sits in the Keychain, which doctor does not touch.
@@ -278,21 +368,26 @@ doctor_agents() {
   if [ ! -r "$live" ]; then
     bad "no $(tilde "$live")"
     hint "cp $(tilde "$tpl") $(tilde "$live")"
+    fix agents
   elif [ -r "$tpl" ] && have yq; then
     if [ "$(omp_preset "$live")" = "$(omp_preset "$tpl")" ]; then ok "OMP preset matches devbox's"; else
       warn "OMP preset in $(tilde "$live") differs from devbox's $(tilde "$tpl")"
       hint "a change made in OMP: cp it over the template, make fmt and commit in devbox, then devbox sync omp; a change in devbox: devbox sync omp"
     fi
   fi
-  [ -x "$HOME/.local/bin/agent-browser" ] && ok agent-browser || bad 'agent-browser missing'
   local pair skill
   for pair in $SKILLS; do
     skill=${pair#*:}
-    [ -d "$HOME/.agents/skills/$skill" ] || bad "skill $skill missing"
+    [ -d "$HOME/.agents/skills/$skill" ] || {
+      bad "skill $skill missing"
+      hint 'dot doctor --fix'
+      fix agents
+    }
   done
   if have mise && mise exec -- node --version >/dev/null 2>&1; then ok "node $(mise exec -- node --version) via mise"; else
     bad 'no Node from mise'
     hint 'mise install'
+    fix runtimes
   fi
   local tool bin file version
   for tool in tf tofu; do
@@ -303,6 +398,7 @@ doctor_agents() {
     if [ -n "$version" ] && [ -x "${file%/*}/$version/$bin" ]; then ok "$bin $version via tenv"; else
       bad "no default $bin version in tenv"
       hint "tenv $tool use --force-remote --install latest-stable"
+      fix runtimes
     fi
   done
   # A standalone installer's copy ahead of Homebrew's on the PATH runs while
@@ -331,6 +427,7 @@ doctor_agents() {
   else
     bad 'moshi-hook service not running'
     hint 'brew services start moshi-hook'
+    fix agents
   fi
   have moshi-hook && scan_ports_sync 1
   # Docker Desktop at login races launchd's com.docker.socket to recreate

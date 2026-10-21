@@ -68,5 +68,5 @@ vault_sync() {
       ;;
     esac
   done 3< <(vault_entries)
-  [ $FAILS = 0 ]
+  [ "$FAILS" = 0 ]
 }

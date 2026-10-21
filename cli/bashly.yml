@@ -47,7 +47,13 @@ commands:
     group: Setup
     help: |-
       Acceptance test for the whole machine.
-      Exits 1 while any check fails; every failure comes with the command that fixes it.
+      Exits 1 while any check fails; every failure comes with the command that fixes it. Failures dot can repair itself (Brewfile, links, login shell, macOS defaults, Touch ID, vault files and modes, identity config, devbox clone and launchers, runtimes, OMP, Claude Code, agent skills, moshi-hook) are listed at the end; --fix runs them. Sign-ins, approvals and GUI settings stay with you.
+    flags:
+      - long: --fix
+        help: After the report, list the automatic fixes, ask, run them, then check again (your own terminal only)
+    examples:
+      - dot doctor
+      - dot doctor --fix
 
   - name: sync
     group: Maintenance

@@ -56,7 +56,9 @@ mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettie
    carry the value this Mac actually has (or a stated security override), and work with SIP enabled. Drop
    keys whose feature is gone rather than keeping them "just in case".
 7. **Every manual step is a doctor check.** A new thing a person must do on a new Mac gets a check in
-   `dot doctor` (with a `hint` naming the fix) and a phase entry in the `workstation-setup` skill.
+   `dot doctor` (with a `hint` naming the fix) and a phase entry in the `workstation-setup` skill. A
+   failure dot can repair unattended also calls `fix <name>`: a `fix_<name>` function in `cli/lib/doctor.sh`,
+   placed in `FIX_ORDER` after what it depends on, so `dot doctor --fix` runs it.
 8. **One app per cask in the Brewfile.** Without a terminal `bin/dot` sets `HOMEBREW_NO_SUDO`, so a cask
    step macOS refuses fails instead of hanging; Homebrew's rollback of a cask that ships two apps would
    delete the first, already adopted app from /Applications. Check a new cask with

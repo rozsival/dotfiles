@@ -46,14 +46,6 @@ setup_agents() {
   [ -x "$HOME/.local/bin/claude" ] || curl -fsSL https://claude.ai/install.sh | bash
   ok "claude $("$HOME/.local/bin/claude" --version 2>/dev/null | head -1)"
 
-  # npm's --prefix puts the CLI in ~/.local/bin, independent of which Node mise
-  # has active; npm 11 runs no install scripts unless allow-listed.
-  if [ ! -x "$HOME/.local/bin/agent-browser" ]; then
-    npm install -g --prefix "$HOME/.local" --allow-scripts=agent-browser "agent-browser@$AGENT_BROWSER_VERSION"
-    "$HOME/.local/bin/agent-browser" install
-  fi
-  ok "agent-browser $("$HOME/.local/bin/agent-browser" --version 2>/dev/null)"
-
   # ~/.agents/skills is what OMP reads; `--agent claude-code` symlinks each into
   # ~/.claude/skills for Claude Code (devbox container/skills.sh does the same).
   local pair repo skill

@@ -8,12 +8,14 @@ description: Guides a person through the parts of setting up this Mac that a scr
 `bin/dot doctor` is the acceptance test: every ✗ names a gap and its `→` line the fix. Run it, take
 failures in the phase order below (later phases depend on earlier ones), re-run the specific check
 after each step, and finish when doctor prints `all checks passed`. Warnings (`!`) are judgement
-calls - mention them, fix them if the person agrees.
+calls - mention them, fix them if the person agrees. When doctor ends with `fix(es) dot can run itself`,
+start there: the person runs `bin/dot doctor --fix` in their own terminal (it needs sudo and refuses an
+agent shell), then take what remains.
 
 `install.sh` already installed Xcode CLT, Homebrew and Homebrew bash (`bin/dot` needs it), and `bin/dot
 setup` ran: `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, Terraform and OpenTofu via tenv, the devbox clone
 (HTTPS) and its OMP preset in `~/.omp/agent/config.yml`, OMP, Claude Code,
-agent-browser, global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults. Re-run a
+global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults. Re-run a
 single piece (`dot brew`, `dot link`, `dot macos`) rather than all of `dot setup`; `dot <command> --help`
 lists a command's options.
 
