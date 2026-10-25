@@ -34,6 +34,7 @@ brew "mosh"
 brew "wakeonlan"
 brew "mkcert"
 brew "gnupg"
+brew "rsync"
 # No brew openssh: /usr/bin/ssh (OpenSSH 10.x) already supports `ssh -P tag` / `Match tagged`.
 cask "ghostty"
 cask "1password"
