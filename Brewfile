@@ -56,6 +56,7 @@ brew "bashly"
 # AI & agents
 cask "codex" # Codex CLI via cask; replaces the standalone install in ~/.local/bin
 cask "chatgpt"
+cask "spokenly" # dictation; sign in to sync settings (workstation-setup phase 8)
 cask "claude" # desktop app only; Claude Code uses its own installer
 cask "codexbar"
 brew "herdr" # in homebrew-core; replaces the standalone binary in ~/.local/bin
