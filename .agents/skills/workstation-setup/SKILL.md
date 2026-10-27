@@ -166,10 +166,14 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 - No cask, manual download: Moshi (above), Amphetamine Enhancer (from within Amphetamine).
 - JetBrains Toolbox: sign in, enable Settings → Tools → Shell scripts → `~/bin`, install the IDEs in
   use (CLion, DataGrip, PyCharm, Rider, RustRover, WebStorm), sign in to each for Settings Sync.
+- Spokenly: the person signs in within the app, so its settings sync restores modes, word replacements
+  and model settings, then grants Microphone and Accessibility when asked. Doctor cannot see the login;
+  the person confirms modes and word replacements are back.
 - First runs that need the person: Docker Desktop (accept terms; Settings → Advanced → untick "Allow the
   default Docker socket to be used", else it asks for an admin password at every boot), Rectangle Pro (license,
   Accessibility permission), Google Drive, Slack, Notion, Signal, WhatsApp.
-- Login items worth restoring: Rectangle Pro, Pure Paste, Google Drive, Notion Calendar, duet, CodexBar.
+- Login items worth restoring: Rectangle Pro, Pure Paste, Google Drive, Notion Calendar, duet, CodexBar,
+  Spokenly.
 
 ## Phase 9 - cloud and package registries (only what the person uses)
 
