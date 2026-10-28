@@ -106,6 +106,7 @@ brew "vips"
 brew "imagemagick"
 brew "ghostscript"
 brew "atomicparsley"
+brew "librsvg"
 
 # Apps: work
 cask "jetbrains-toolbox"
