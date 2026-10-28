@@ -201,7 +201,7 @@ dot_sync_usage() {
 dot_update_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot update\n\n"
-    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, Terraform and OpenTofu (tenv's default moves to\n  the latest stable), OMP, Claude Code, agent skills and moshi-hook; clears the\n  shell's completion caches and Homebrew's quarantine on ChatGPT's Computer Use\n  helper.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n  Last, when Homebrew upgraded herdr under a running server, asks before \`herdr\n  server stop\` (every pane process ends; OMP and Claude sessions resume on the\n  next \`herdr\`); without a terminal it only names the command.\n\n"
+    printf "  Upgrade everything installed.\n  Homebrew packages, mise tools, Terraform and OpenTofu (tenv's default moves to\n  the latest stable), bun and OMP, Claude Code, agent skills and moshi-hook;\n  clears the shell's completion caches and Homebrew's quarantine on ChatGPT's\n  Computer Use helper.\n  A failing step does not stop the rest: each failure is reported and the\n  command exits 1 at the end.\n  Last, when Homebrew upgraded herdr under a running server, asks before \`herdr\n  server stop\` (every pane process ends; OMP and Claude sessions resume on the\n  next \`herdr\`); without a terminal it only names the command.\n\n"
   else
     printf "dot update - Upgrade everything installed.\n\n"
   fi
@@ -1718,6 +1718,10 @@ dot_update_command() {
   attempt tenv --quiet tf use --force-remote --install latest-stable
   attempt tenv --quiet tofu use --force-remote --install latest-stable
   step OMP
+  # OMP's installer put bun in ~/.bun and nothing else upgrades it, while each OMP
+  # release may raise the bun it needs; too old a bun makes `omp update` fall back
+  # to a standalone binary that bun's next global install collides with.
+  [ ! -x "$HOME/.bun/bin/bun" ] || attempt "$HOME/.bun/bin/bun" upgrade
   # By name, so through the devbox launcher once installed: for `update` it
   # drops its own PATH entries and omp's updater finds the real install. The
   # real binary run directly finds the launcher symlink first and refuses.
