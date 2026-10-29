@@ -1,11 +1,14 @@
 # Global tool versions; projects pin their own via .nvmrc / .node-version / mise.toml.
 
 [tools]
-# Same major the devbox image pins (NODE_VERSION in devbox's Dockerfile).
-node = "24"
+# Same majors the devbox image pins (NODE_VERSION, NODE_MAINTENANCE_VERSION in
+# devbox's Dockerfile): 26 is the default, 24 stays installed until its end of life.
+node = ["26", "24"]
 
 [settings]
 # Honour .nvmrc and .node-version the way nvm did.
 idiomatic_version_file_enable_tools = ["node"]
-# Enable corepack on every Node install so pnpm/yarn come from packageManager.
+# Node 25+ no longer bundles corepack: install it into every new Node version,
+# then enable it so pnpm/yarn come from packageManager.
+node.default_packages_file = "~/.config/mise/default-npm-packages"
 node.corepack = true

@@ -2,5 +2,5 @@
 # `make` runs these through `mise exec`, which installs anything missing; run `mise trust` once.
 
 [tools]
-node = "24"
+node = "26"
 "npm:prettier" = "3.9.9"
