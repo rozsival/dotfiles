@@ -3,12 +3,13 @@
 [tools]
 # Same majors the devbox image pins (NODE_VERSION, NODE_MAINTENANCE_VERSION in
 # devbox's Dockerfile): 26 is the default, 24 stays installed until its end of life.
-node = ["26", "24"]
+# Node 25+ no longer bundles corepack: postinstall puts it into every new Node
+# version and enables it, so pnpm/yarn come from packageManager.
+node = [
+  { version = "26", postinstall = "npm install --global corepack && corepack enable" },
+  { version = "24", postinstall = "npm install --global corepack && corepack enable" },
+]
 
 [settings]
 # Honour .nvmrc and .node-version the way nvm did.
 idiomatic_version_file_enable_tools = ["node"]
-# Node 25+ no longer bundles corepack: install it into every new Node version,
-# then enable it so pnpm/yarn come from packageManager.
-node.default_packages_file = "~/.config/mise/default-npm-packages"
-node.corepack = true
