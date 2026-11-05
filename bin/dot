@@ -653,9 +653,11 @@ fresh_shadowed() {
 # Failures dot can repair itself, recorded next to their hint as `fix <name>
 # [args]`; `dot doctor --fix` runs them as fix_<name>. Run in FIX_ORDER, not
 # check order, so what a later fix needs (Homebrew's tools, the linked env.sh,
-# the devbox clone and its identity renderer) is there first.
+# the restored secrets.env - devbox's installer seeds an empty template that
+# `vault pull` would then keep - the devbox clone and its identity renderer) is
+# there first.
 FIXES=()
-FIX_ORDER='brew shell link devbox vault chmod identities runtimes agents touchid macos'
+FIX_ORDER='brew shell link vault devbox chmod identities runtimes agents touchid macos'
 
 fix() {
   local entry f
@@ -1052,7 +1054,7 @@ doctor_agents() {
   if brew services list 2>/dev/null | awk '$1 == "moshi-hook" {print $2}' | grep started >/dev/null; then
     if moshi-hook status 2>/dev/null | grep 'status:[[:space:]]*paired' >/dev/null; then ok 'moshi-hook running and paired'; else
       bad 'moshi-hook not paired'
-      hint 'Moshi app -> Settings -> Hooks -> token, then: moshi-hook pair --token <token>'
+      hint 'Moshi iPhone app -> Settings -> Integrations -> token, then: moshi-hook pair --token <token>'
     fi
   else
     bad 'moshi-hook service not running'

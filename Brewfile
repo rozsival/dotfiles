@@ -72,7 +72,7 @@ brew "openjdk"
 # Node, Python versions etc. are managed per-project by mise.
 
 # Cloud, Kubernetes & DB clients
-brew "azure-cli"
+cask "azure-cli" # homebrew-core dropped the formula; the cask ships the same `az`
 brew "azure/kubelogin/kubelogin", trusted: true
 brew "helm"
 brew "k9s"
