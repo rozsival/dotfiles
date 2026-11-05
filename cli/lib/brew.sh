@@ -8,7 +8,14 @@ brew_bundle() {
     brew bundle --file "$DOTFILES/Brewfile"
     chatgpt_unquarantine
     ;;
-  --mas) brew bundle --file "$DOTFILES/Brewfile.mas" ;;
+  --mas)
+    # Installing Xcode is what leaves its license pending: accept it before
+    # anything else runs brew, even when another App Store app failed.
+    local status=0
+    brew bundle --file "$DOTFILES/Brewfile.mas" || status=$?
+    xcode_license_accept
+    return "$status"
+    ;;
   --check)
     brew bundle check --file "$DOTFILES/Brewfile" --verbose
     brew bundle check --file "$DOTFILES/Brewfile.mas" --verbose
@@ -16,6 +23,18 @@ brew_bundle() {
   # Dry run on purpose: lists what `brew bundle cleanup --force` would remove.
   --cleanup) brew bundle cleanup --file "$DOTFILES/Brewfile" ;;
   esac
+}
+
+# Homebrew refuses every command while an installed Xcode's license is
+# unaccepted. `-license check` needs no sudo; accepting does.
+XCODE_DEVELOPER=/Applications/Xcode.app/Contents/Developer
+xcode_license_pending() {
+  [ -d "$XCODE_DEVELOPER" ] && ! "$XCODE_DEVELOPER/usr/bin/xcodebuild" -license check >/dev/null 2>&1
+}
+xcode_license_accept() {
+  xcode_license_pending || return 0
+  sudo "$XCODE_DEVELOPER/usr/bin/xcodebuild" -license accept
+  ok 'Xcode license accepted'
 }
 
 # ChatGPT copies this helper to ~/.codex/computer-use on every launch, and the

@@ -13,7 +13,7 @@ start there: the person runs `bin/dot doctor --fix` in their own terminal (it ne
 agent shell), then take what remains.
 
 `install.sh` already installed Xcode CLT, Homebrew and Homebrew bash (`bin/dot` needs it), and `bin/dot
-setup` ran: `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, Terraform and OpenTofu via tenv, the devbox clone
+setup` ran: Xcode license (if Xcode was installed), `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, Terraform and OpenTofu via tenv, the devbox clone
 (HTTPS) and its OMP preset in `~/.omp/agent/config.yml`, OMP, Claude Code,
 agent-browser CLI, global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults (including key
 repeat and the Czech + ABC keyboard layouts). Re-run a
@@ -207,7 +207,9 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   (untapping also drops the trust entry).
 - App Store, never skipped (doctor fails on `App Store apps missing`): the person opens the App Store app
   and signs in with Store → Sign In (`mas` cannot sign in), then runs `bin/dot brew --mas` in their own
-  Ghostty tab. Tell them first that Xcode, Final Cut Pro and Logic Pro are large and take a while.
+  Ghostty tab. Tell them first that Xcode, Final Cut Pro and Logic Pro are large and take a while. It accepts
+  the Xcode license once Xcode is in (sudo): while that is pending every `brew` command fails, and doctor's
+  "Xcode license" check offers `dot doctor --fix`.
 - No cask, manual download: Moshi (above), Amphetamine Enhancer (from within Amphetamine).
 - JetBrains Toolbox: sign in, enable Settings → Tools → Shell scripts → `~/bin`, install the IDEs in
   use (CLion, DataGrip, PyCharm, Rider, RustRover, WebStorm), sign in to each for Settings Sync.
@@ -215,8 +217,9 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   and model settings, then grants Microphone and Accessibility when asked. Doctor cannot see the login;
   the person confirms modes and word replacements are back.
 - First runs that need the person: Docker Desktop (accept terms; Settings → Advanced → untick "Allow the
-  default Docker socket to be used", else it asks for an admin password at every boot), Rectangle Pro (license,
-  Accessibility permission), Google Drive, Slack, Notion, Signal, WhatsApp.
+  default Docker socket to be used", else it asks for an admin password at every boot; it may prepend a PATH
+  block to the linked `~/.bash_profile`, which `env.sh` already covers: delete it from `home/.bash_profile`),
+  Rectangle Pro (license, Accessibility permission), Google Drive, Slack, Notion, Signal, WhatsApp.
 - Login items worth restoring: Rectangle Pro, Pure Paste, Google Drive, Notion Calendar, duet, CodexBar,
   Spokenly.
 

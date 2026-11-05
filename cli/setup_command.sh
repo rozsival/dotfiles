@@ -1,6 +1,8 @@
 ## install.sh has installed Xcode CLT, Homebrew and Homebrew bash: bin/dot needs that bash.
 brew_env || die "Homebrew missing in $HOMEBREW_PREFIX: run install.sh"
 sudo -v
+# A no-op unless Xcode is already installed (restored from a backup, say).
+xcode_license_accept
 step 'Packages (Brewfile)'
 brew bundle --file "$DOTFILES/Brewfile" || warn 'some Brewfile entries failed; fix them and re-run `dot brew`'
 chatgpt_unquarantine

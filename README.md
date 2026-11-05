@@ -81,7 +81,7 @@ flowchart LR
 ```
 
 **Automated** by `install.sh`: Xcode CLT → clone → Homebrew and its bash, which `bin/dot` runs on. Then by `dot setup`:
-the [`Brewfile`](Brewfile) → Homebrew bash as the login shell → `dot link` → mise Node, rustup, and Terraform and OpenTofu via tenv → the devbox clone and
+the Xcode license (if Xcode is installed) → the [`Brewfile`](Brewfile) → Homebrew bash as the login shell → `dot link` → mise Node, rustup, and Terraform and OpenTofu via tenv → the devbox clone and
 its OMP preset, OMP, Claude Code, agent skills and moshi-hook → Touch ID for sudo → macOS defaults.
 
 **Guided** by `dot agent`: the harness starts with [`setup/PROMPT.md`](setup/PROMPT.md) and the

@@ -32,7 +32,7 @@ fresh_shadowed() {
 # `vault pull` would then keep - the devbox clone and its identity renderer) is
 # there first.
 FIXES=()
-FIX_ORDER='brew shell link vault devbox chmod identities runtimes agents touchid macos'
+FIX_ORDER='xcode brew shell link vault devbox chmod identities runtimes agents touchid macos'
 
 fix() {
   local entry f
@@ -42,6 +42,7 @@ fix() {
   FIXES+=("$entry")
 }
 
+fix_xcode() { xcode_license_accept; }
 fix_brew() { brew_bundle ''; }
 fix_shell() { setup_shell; }
 fix_link() { link_home 0; }
@@ -122,6 +123,15 @@ doctor_system() {
     bad 'Xcode Command Line Tools missing'
     hint 'xcode-select --install'
   }
+  # A pending Xcode license makes every brew command fail, so the Brewfile and
+  # brew services checks below fail with it.
+  if xcode_license_pending; then
+    bad 'Xcode license not accepted: Homebrew refuses to run'
+    hint 'dot doctor --fix'
+    fix xcode
+  elif [ -d "$XCODE_DEVELOPER" ]; then
+    ok 'Xcode license accepted'
+  fi
   if brew_env; then
     if brew bundle check --file "$DOTFILES/Brewfile" --no-upgrade >/dev/null 2>&1; then
       ok 'Brewfile satisfied'

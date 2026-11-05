@@ -83,7 +83,7 @@ dot_usage() {
 dot_setup_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot setup\n\n"
-    printf "  Everything automatable; idempotent.\n  Brewfile, Homebrew bash as login shell, \`dot link\`, mise and rustup runtimes,\n  Terraform and OpenTofu via tenv, gcloud components, devbox clone and its OMP\n  preset, OMP, Claude Code, agent skills, moshi-hook, Touch ID for sudo, macOS\n  defaults. install.sh runs it once Xcode CLT, Homebrew and Homebrew bash exist.\n  Run it in your own terminal: it asks for sudo.\n\n"
+    printf "  Everything automatable; idempotent.\n  Xcode license (when Xcode is installed), Brewfile, Homebrew bash as login\n  shell, \`dot link\`, mise and rustup runtimes, Terraform and OpenTofu via tenv,\n  gcloud components, devbox clone and its OMP preset, OMP, Claude Code, agent\n  skills, moshi-hook, Touch ID for sudo, macOS defaults. install.sh runs it once\n  Xcode CLT, Homebrew and Homebrew bash exist. Run it in your own terminal: it\n  asks for sudo.\n\n"
   else
     printf "dot setup - Everything automatable; idempotent.\n\n"
   fi
@@ -144,7 +144,7 @@ dot_agent_usage() {
 dot_doctor_usage() {
   if [[ -n $long_usage ]]; then
     printf "dot doctor\n\n"
-    printf "  Acceptance test for the whole machine.\n  Exits 1 while any check fails; every failure comes with the command that fixes\n  it. Failures dot can repair itself (Brewfile, links, login shell, macOS\n  defaults, Touch ID, vault files and modes, identity config, devbox clone and\n  launchers, runtimes, OMP, Claude Code, agent skills, moshi-hook) are listed at\n  the end; --fix runs them. Sign-ins, approvals and GUI settings stay with you.\n\n"
+    printf "  Acceptance test for the whole machine.\n  Exits 1 while any check fails; every failure comes with the command that fixes\n  it. Failures dot can repair itself (Xcode license, Brewfile, links, login\n  shell, macOS defaults, Touch ID, vault files and modes, identity config,\n  devbox clone and launchers, runtimes, OMP, Claude Code, agent skills,\n  moshi-hook) are listed at the end; --fix runs them. Sign-ins, approvals and\n  GUI settings stay with you.\n\n"
   else
     printf "dot doctor - Acceptance test for the whole machine.\n\n"
   fi
@@ -595,7 +595,14 @@ brew_bundle() {
     brew bundle --file "$DOTFILES/Brewfile"
     chatgpt_unquarantine
     ;;
-  --mas) brew bundle --file "$DOTFILES/Brewfile.mas" ;;
+  --mas)
+    # Installing Xcode is what leaves its license pending: accept it before
+    # anything else runs brew, even when another App Store app failed.
+    local status=0
+    brew bundle --file "$DOTFILES/Brewfile.mas" || status=$?
+    xcode_license_accept
+    return "$status"
+    ;;
   --check)
     brew bundle check --file "$DOTFILES/Brewfile" --verbose
     brew bundle check --file "$DOTFILES/Brewfile.mas" --verbose
@@ -603,6 +610,18 @@ brew_bundle() {
   # Dry run on purpose: lists what `brew bundle cleanup --force` would remove.
   --cleanup) brew bundle cleanup --file "$DOTFILES/Brewfile" ;;
   esac
+}
+
+# Homebrew refuses every command while an installed Xcode's license is
+# unaccepted. `-license check` needs no sudo; accepting does.
+XCODE_DEVELOPER=/Applications/Xcode.app/Contents/Developer
+xcode_license_pending() {
+  [ -d "$XCODE_DEVELOPER" ] && ! "$XCODE_DEVELOPER/usr/bin/xcodebuild" -license check >/dev/null 2>&1
+}
+xcode_license_accept() {
+  xcode_license_pending || return 0
+  sudo "$XCODE_DEVELOPER/usr/bin/xcodebuild" -license accept
+  ok 'Xcode license accepted'
 }
 
 # ChatGPT copies this helper to ~/.codex/computer-use on every launch, and the
@@ -657,7 +676,7 @@ fresh_shadowed() {
 # `vault pull` would then keep - the devbox clone and its identity renderer) is
 # there first.
 FIXES=()
-FIX_ORDER='brew shell link vault devbox chmod identities runtimes agents touchid macos'
+FIX_ORDER='xcode brew shell link vault devbox chmod identities runtimes agents touchid macos'
 
 fix() {
   local entry f
@@ -667,6 +686,7 @@ fix() {
   FIXES+=("$entry")
 }
 
+fix_xcode() { xcode_license_accept; }
 fix_brew() { brew_bundle ''; }
 fix_shell() { setup_shell; }
 fix_link() { link_home 0; }
@@ -747,6 +767,15 @@ doctor_system() {
     bad 'Xcode Command Line Tools missing'
     hint 'xcode-select --install'
   }
+  # A pending Xcode license makes every brew command fail, so the Brewfile and
+  # brew services checks below fail with it.
+  if xcode_license_pending; then
+    bad 'Xcode license not accepted: Homebrew refuses to run'
+    hint 'dot doctor --fix'
+    fix xcode
+  elif [ -d "$XCODE_DEVELOPER" ]; then
+    ok 'Xcode license accepted'
+  fi
   if brew_env; then
     if brew bundle check --file "$DOTFILES/Brewfile" --no-upgrade >/dev/null 2>&1; then
       ok 'Brewfile satisfied'
@@ -1637,6 +1666,8 @@ dot_setup_command() {
 
   brew_env || die "Homebrew missing in $HOMEBREW_PREFIX: run install.sh"
   sudo -v
+  # A no-op unless Xcode is already installed (restored from a backup, say).
+  xcode_license_accept
   step 'Packages (Brewfile)'
   brew bundle --file "$DOTFILES/Brewfile" || warn 'some Brewfile entries failed; fix them and re-run `dot brew`'
   chatgpt_unquarantine
