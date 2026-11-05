@@ -34,7 +34,7 @@ fresh_shadowed() {
 # `vault pull` would then keep - the devbox clone and its identity renderer) is
 # there first.
 FIXES=()
-FIX_ORDER='xcode brew shell link vault devbox chmod identities runtimes agents touchid macos'
+FIX_ORDER='xcode brew shell link dockerpath vault devbox chmod identities runtimes agents touchid macos'
 
 fix() {
   local entry f
@@ -48,6 +48,27 @@ fix_xcode() { xcode_license_accept; }
 fix_brew() { brew_bundle ''; }
 fix_shell() { setup_shell; }
 fix_link() { link_home 0; }
+# Docker Desktop ("User" CLI tools, the default since 4.89) prepends a PATH
+# block to the shell profiles it finds; ~/.bash_profile is a link into home/,
+# and env.sh already puts ~/.docker/bin on the PATH. Its start marker through
+# its end marker go, plus the blank line it leaves after them.
+DOCKER_PATH_START='# The following lines were added by Docker Desktop'
+DOCKER_PATH_END='# End of Docker Desktop section.'
+docker_path_files() { grep -rlF --exclude=.DS_Store "$DOCKER_PATH_START" "$DOTFILES/home" 2>/dev/null || true; }
+fix_dockerpath() {
+  local f tmp
+  tmp="$(mktemp)"
+  while IFS= read -r f; do
+    awk -v s="$DOCKER_PATH_START" -v e="$DOCKER_PATH_END" '
+      skip == 2 { skip = 0; if ($0 == "") next }
+      index($0, s) == 1 { skip = 1 }
+      skip == 1 { if ($0 == e) skip = 2; next }
+      { print }' "$f" >"$tmp"
+    cat "$tmp" >"$f"
+    ok "removed Docker Desktop's PATH block from $(tilde "$f")"
+  done < <(docker_path_files)
+  rm -f "$tmp"
+}
 fix_devbox() {
   [ -d "$DEVBOX_DIR/.git" ] || git clone "$DEVBOX_REPO" "$DEVBOX_DIR"
   [ $# = 0 ] || (cd "$DEVBOX_DIR" && ./bin/devbox "$@")
@@ -187,7 +208,7 @@ doctor_system() {
 
 doctor_dotfiles() {
   step Dotfiles
-  local src rel missing=0 dirty ms
+  local src rel missing=0 dirty ms docker
   while IFS= read -r -d '' src; do
     rel=${src#"$DOTFILES/home/"}
     [ "$(readlink "$HOME/$rel" 2>/dev/null)" = "$src" ] || {
@@ -208,6 +229,12 @@ doctor_dotfiles() {
       fix link
     }
   done < <(find "$DOTFILES/seed" -type f ! -name .DS_Store -print0)
+  docker="$(docker_path_files)"
+  [ -z "$docker" ] || {
+    bad "Docker Desktop added a PATH block to $(printf '%s\n' "$docker" | sed "s|^$DOTFILES/||" | paste -sd ' ' -)"
+    hint 'dot doctor --fix (env.sh already puts ~/.docker/bin on the PATH)'
+    fix dockerpath
+  }
   dirty="$(git -C "$DOTFILES" status --porcelain -- home seed 2>/dev/null)"
   if [ -n "$dirty" ]; then
     warn 'tracked dotfiles changed in place (an installer edited a linked file?)'

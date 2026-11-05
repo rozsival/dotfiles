@@ -217,9 +217,10 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   and model settings, then grants Microphone and Accessibility when asked. Doctor cannot see the login;
   the person confirms modes and word replacements are back.
 - First runs that need the person: Docker Desktop (accept terms; Settings → Advanced → untick "Allow the
-  default Docker socket to be used", else it asks for an admin password at every boot; it may prepend a PATH
-  block to the linked `~/.bash_profile`, which `env.sh` already covers: delete it from `home/.bash_profile`),
-  Rectangle Pro (license, Accessibility permission), Google Drive, Slack, Notion, Signal, WhatsApp.
+  default Docker socket to be used", else it asks for an admin password at every boot; it prepends a PATH
+  block to the linked `~/.bash_profile`, which `env.sh` already covers: doctor flags it and
+  `dot doctor --fix` strips it), Rectangle Pro (license, Accessibility permission), Google Drive, Slack,
+  Notion, Signal, WhatsApp.
 - Login items worth restoring: Rectangle Pro, Pure Paste, Google Drive, Notion Calendar, duet, CodexBar,
   Spokenly.
 
