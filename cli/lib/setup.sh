@@ -11,10 +11,7 @@ setup_runtimes() {
   mise install --yes
   mise reshim
   ok "node $(mise exec -- node --version)"
-  if ! rustup default >/dev/null 2>&1; then
-    rustup default stable
-  fi
-  ok "$(rustup default)"
+  setup_rust
   # tenv's terraform and tofu proxies fail until a default version is set. Only
   # when none is, so a chosen default stays; `dot update` moves to the latest.
   local tool
@@ -27,6 +24,20 @@ setup_runtimes() {
   # shellcheck disable=SC2086 # a list of component ids, split on purpose
   gcloud components install --quiet $GCLOUD_COMPONENTS
   ok "gcloud components: $GCLOUD_COMPONENTS"
+}
+
+# An interrupted install leaves a toolchain dir without its manifest: rustup
+# lists it, `rustup default` passes, and every cargo/rustc call fails until it
+# is reinstalled. So gate on the toolchain running, not on it being listed.
+# RUSTUP_AUTO_INSTALL=0: rustup would otherwise install a missing toolchain
+# inside the probe, output swallowed.
+setup_rust() {
+  if ! RUSTUP_AUTO_INSTALL=0 rustup run stable rustc --version >/dev/null 2>&1; then
+    rustup toolchain uninstall stable >/dev/null 2>&1 || true
+    rustup toolchain install stable
+  fi
+  rustup default >/dev/null 2>&1 || rustup default stable
+  ok "$(rustup run stable rustc --version) via rustup"
 }
 
 setup_agents() {

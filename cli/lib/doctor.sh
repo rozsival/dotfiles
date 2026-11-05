@@ -446,6 +446,11 @@ doctor_agents() {
     hint 'mise install'
     fix runtimes
   fi
+  if have rustup && RUSTUP_AUTO_INSTALL=0 rustup run stable rustc --version >/dev/null 2>&1; then ok "$(rustup run stable rustc --version) via rustup"; else
+    bad 'stable Rust toolchain missing or broken'
+    hint 'rustup toolchain uninstall stable && rustup toolchain install stable'
+    fix runtimes
+  fi
   local tool bin file version
   for tool in tf tofu; do
     bin=terraform
