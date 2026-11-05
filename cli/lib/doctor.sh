@@ -8,7 +8,9 @@ fresh_which() {
 }
 
 # "dir name" for each command Homebrew links whose first hit on that PATH is
-# another install. mise shims are meant to win for the runtimes mise manages.
+# another install. mise shims are meant to win for the runtimes mise manages,
+# and the devbox launchers for the agents they wrap: each execs the next
+# `<tool>` on the PATH, Homebrew's included.
 # Builtins only: one shell, no fork per name.
 fresh_shadowed() {
   env -i HOME="$HOME" USER="$USER" PATH=/usr/bin:/bin:/usr/sbin:/sbin \
@@ -19,7 +21,7 @@ fresh_shadowed() {
         name=${bin##*/}
         for dir in "${dirs[@]}"; do
           [ -x "$dir/$name" ] && [ ! -d "$dir/$name" ] || continue
-          case $dir in "$1"/* | "$HOME/.local/share/mise/shims") ;; *) printf "%s %s\n" "$dir" "$name" ;; esac
+          case $dir in "$1"/* | "$HOME/.local/share/mise/shims" | "$HOME/.local/libexec/devbox-agent/launchers") ;; *) printf "%s %s\n" "$dir" "$name" ;; esac
           break
         done
       done' _ "$HOMEBREW_PREFIX"
@@ -360,7 +362,7 @@ doctor_devbox() {
     hint "echo 'DEVBOX_HOST=panther-minor' >$(tilde "$DEVBOX_DIR")/.push.env"
   }
   local cmd want got
-  for cmd in omp claude; do
+  for cmd in omp claude codex; do
     want="$HOME/.local/libexec/devbox-agent/launchers/$cmd"
     got="$(fresh_which "$cmd" || true)"
     if [ "$got" = "$want" ]; then ok "$cmd -> devbox launcher"; else
