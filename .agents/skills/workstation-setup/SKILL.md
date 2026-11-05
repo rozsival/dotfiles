@@ -1,6 +1,6 @@
 ---
 name: workstation-setup
-description: Guides a person through the parts of setting up this Mac that a script cannot do - 1Password and its SSH agent, restoring secret files from 1Password (`dot vault pull`), devbox's laptop agent tooling, rendering git/ssh identity config (`dot identities`), GitHub login, Tailscale and the devbox connection (herdr, `devbox doctor laptop`), agent logins, Moshi pairing, App Store apps, JetBrains IDEs, cloud CLI logins - driven by `bin/dot doctor` as the acceptance test. Use when setting up a new or reinstalled Mac, when `dot doctor` fails, or when asked what is still missing on this machine.
+description: Guides a person through the parts of setting up this Mac that a script cannot do - updating macOS, 1Password with its SSH agent and AutoFill, restoring secret files from 1Password (`dot vault pull`), devbox's laptop agent tooling, rendering git/ssh identity config (`dot identities`), GitHub login, Tailscale and the devbox connection (herdr, `devbox doctor laptop`), agent logins, Moshi pairing, App Store apps, JetBrains IDEs, cloud CLI logins, first app launches - driven by `bin/dot doctor` as the acceptance test, in English or Czech. Use when setting up a new or reinstalled Mac, when `dot doctor` fails, or when asked what is still missing on this machine.
 ---
 
 # Workstation setup
@@ -15,7 +15,8 @@ agent shell), then take what remains.
 `install.sh` already installed Xcode CLT, Homebrew and Homebrew bash (`bin/dot` needs it), and `bin/dot
 setup` ran: `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, Terraform and OpenTofu via tenv, the devbox clone
 (HTTPS) and its OMP preset in `~/.omp/agent/config.yml`, OMP, Claude Code,
-agent-browser CLI, global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults. Re-run a
+agent-browser CLI, global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults (including key
+repeat and the Czech + ABC keyboard layouts). Re-run a
 single piece (`dot brew`, `dot link`, `dot macos`) rather than all of `dot setup`; `dot <command> --help`
 lists a command's options.
 
@@ -39,6 +40,45 @@ lists a command's options.
 The 1Password agent socket, for commands that need it explicitly:
 `SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`.
 
+## Language
+
+Speak the language of this Mac's interface: the first entry of `defaults read -g AppleLanguages` (`cs-…`
+means Czech, informal "ty"), unless the person writes in another language. Every click path names the
+labels exactly as the screen shows them, never a translation of your own. System Settings labels for
+the paths below, as macOS 27 shows them (`dot doctor` hints are in English; give the person the
+matching Czech path):
+
+| English                                              | Czech                                                                         |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| System Settings                                      | Nastavení systému                                                             |
+| General → Software Update                            | Obecné → Aktualizace softwaru                                                 |
+| General → AutoFill & Passwords                       | Obecné → Automatické vyplňování a hesla                                       |
+| … AutoFill Passwords and Passkeys                    | … Automatické vyplňování hesel a přístupových klíčů                           |
+| … AutoFill from                                      | … Zdroje                                                                      |
+| … Verification Codes → Set Up Codes In               | … Ověřovací kódy → Nastavovat kódy v aplikaci                                 |
+| General → Login Items & Extensions → Open at Login   | Obecné → Aktivace položek a rozšíření při přihlášení → Otevřít při přihlášení |
+| Privacy & Security → App Management                  | Soukromí a zabezpečení → Správa aplikací                                      |
+| Privacy & Security → Accessibility                   | Soukromí a zabezpečení → Zpřístupnění                                         |
+| Privacy & Security → Microphone                      | Soukromí a zabezpečení → Mikrofon                                             |
+| Privacy & Security → Screen & System Audio Recording | Soukromí a zabezpečení → Záznam obrazovky a systémového zvuku                 |
+| Privacy & Security → FileVault                       | Soukromí a zabezpečení → FileVault                                            |
+| Keyboard → Text Input → Input Sources → Edit…        | Klávesnice → Zadání textu → Vstupní zdroje → Upravit…                         |
+| Keyboard → Key repeat rate, Delay until repeat       | Klávesnice → Rychlost opakování kláves, Prodleva opakování                    |
+| App Store app: Store → Sign In                       | App Store: Obchod → Přihlásit se                                              |
+
+A System Settings label not in this table: describe where it is (pane, section, position) and ask the
+person to read it out, then use their wording. Third-party apps (1Password, Docker Desktop, JetBrains
+Toolbox…) show their own labels, often English on a Czech Mac: quote those as they appear.
+
+## Phase 0 - macOS up to date
+
+README's quick start makes this step 0, before `install.sh`, and `install.sh` refuses anything older
+than macOS 27. If doctor still warns `software updates pending` (what Software Update found at its last
+scan), the person installs them first: System Settings → General → Software Update, restart, then
+`bin/dot agent` again. After `dot setup` the person logs out and back in once: key repeat and keyboard
+shortcuts take effect only at login; if holding a key still repeats slowly, they have not.
+Verify: the macOS line in doctor's System section, no `software updates pending`.
+
 ## Phase 1 - 1Password
 
 Everything after this depends on it. The person:
@@ -47,6 +87,10 @@ Everything after this depends on it. The person:
    `sitefellows.1password.eu`).
 2. Settings → Security: Touch ID on.
 3. Settings → Developer: **Use the SSH agent** on, **Integrate with 1Password CLI** on.
+4. System Settings → General → AutoFill & Passwords: **AutoFill Passwords and Passkeys** on, under
+   **AutoFill from** 1Password on, and **Set Up Codes In** (Verification Codes) set to 1Password. Czech
+   labels in the table above. Verify: doctor's `1Password fills passwords and passkeys` and
+   `1Password sets up verification codes`.
 
 Which vaults the agent serves is `~/.config/1Password/ssh/agent.toml`, tracked (`home/`, symlinked by
 `dot link`): a key in a vault or account it doesn't list is invisible to ssh. Verify: doctor's
@@ -161,8 +205,9 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   leftover from a third-party tap (and re-trusting before re-running is wiped again). Remove each such
   leftover on its own: `brew trust --formula <tap>/<name> && brew uninstall <name> && brew untap <tap>`
   (untapping also drops the trust entry).
-- App Store: the person signs in to the App Store app (`mas` cannot), then `bin/dot brew --mas`. Large (Xcode, Final Cut
-  Pro, Logic Pro): confirm before starting.
+- App Store, never skipped (doctor fails on `App Store apps missing`): the person opens the App Store app
+  and signs in with Store → Sign In (`mas` cannot sign in), then runs `bin/dot brew --mas` in their own
+  Ghostty tab. Tell them first that Xcode, Final Cut Pro and Logic Pro are large and take a while.
 - No cask, manual download: Moshi (above), Amphetamine Enhancer (from within Amphetamine).
 - JetBrains Toolbox: sign in, enable Settings → Tools → Shell scripts → `~/bin`, install the IDEs in
   use (CLion, DataGrip, PyCharm, Rider, RustRover, WebStorm), sign in to each for Settings Sync.
@@ -185,3 +230,17 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 `bin/dot doctor` passes. Remaining warnings are listed for the person with a recommendation. If `git -C
 ~/projects/rozsival/dotfiles status` shows changes under `home/`, an installer edited a linked file:
 show the diff and ask whether it belongs in the repo or in `~/.config/bash/local.sh`.
+
+End with a short summary in the person's language: what was set up, what is still open (warnings,
+skipped phases), and the apps they have to open themselves for the first time. Find those with
+
+```bash
+for app in /Applications/*.app /Applications/*/*.app; do
+  [ "$(mdls -raw -name kMDItemLastUsedDate "$app" 2>/dev/null)" = '(null)' ] && echo "${app#/Applications/}"
+done
+```
+
+(never launched since install; leave out uninstallers and apps macOS ships, such as Safari). Spotlight may
+still be indexing a fresh Mac and report an opened app as never used: check the list against phase 8's
+first runs and ask when unsure. Give each app its first-run action from phase 8 or the app's own prompt:
+sign-in, license, permission, login item.

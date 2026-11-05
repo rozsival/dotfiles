@@ -4,7 +4,7 @@ Guidance for AI agents working in this repository.
 
 ## What this is
 
-macOS dotfiles for an AI-first workstation (Apple Silicon, macOS 26+). `install.sh` → `bin/dot setup`
+macOS dotfiles for an AI-first workstation (Apple Silicon, macOS 27+). `install.sh` → `bin/dot setup`
 automates everything a script can; `bin/dot agent` starts a harness with `setup/PROMPT.md` and the
 `workstation-setup` skill for the human-in-the-loop rest; `bin/dot doctor` is the acceptance test for
 both. The laptop drives [devbox](https://github.com/rozsival/devbox) (remote agent container) and runs

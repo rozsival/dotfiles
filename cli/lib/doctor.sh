@@ -102,7 +102,22 @@ doctor_summary() {
 
 doctor_system() {
   step System
-  ok "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)), $(uname -m)"
+  local os os_major updates i names=''
+  os="$(sw_vers -productVersion)"
+  os_major=${os%%.*}
+  if [ "$os_major" -ge 27 ]; then ok "macOS $os ($(sw_vers -buildVersion)), $(uname -m)"; else
+    bad "macOS $os: this setup needs macOS 27 or newer"
+    hint 'System Settings -> General -> Software Update'
+  fi
+  # What Software Update found at its last scan (it checks daily); no network here.
+  updates="$(plutil -extract RecommendedUpdates raw -o - /Library/Preferences/com.apple.SoftwareUpdate.plist 2>/dev/null)" || updates=0
+  if [ "$updates" -gt 0 ]; then
+    for ((i = 0; i < updates; i++)); do
+      names+="${names:+, }$(plutil -extract "RecommendedUpdates.$i.Display Name" raw -o - /Library/Preferences/com.apple.SoftwareUpdate.plist 2>/dev/null)"
+    done
+    warn "software updates pending: $names"
+    hint 'System Settings -> General -> Software Update'
+  fi
   xcode-select -p >/dev/null 2>&1 && ok 'Xcode Command Line Tools' || {
     bad 'Xcode Command Line Tools missing'
     hint 'xcode-select --install'
@@ -118,8 +133,8 @@ doctor_system() {
     if brew bundle check --file "$DOTFILES/Brewfile.mas" --no-upgrade >/dev/null 2>&1; then
       ok 'App Store apps (Brewfile.mas)'
     else
-      warn 'App Store apps missing'
-      hint 'sign in to the App Store app, then: dot brew --mas'
+      bad 'App Store apps missing'
+      hint 'App Store app -> Store -> Sign In, then in your own terminal: dot brew --mas'
     fi
     if chatgpt_quarantined; then
       warn 'ChatGPT Computer Use helper quarantined: Gatekeeper asks on every ChatGPT launch'
@@ -222,6 +237,19 @@ doctor_upstream() {
 doctor_identity() {
   step '1Password, keys, git'
   [ -d /Applications/1Password.app ] && ok '1Password app' || bad '1Password app missing'
+  if pluginkit -m -p com.apple.authentication-services-credential-provider-ui -i com.1password.1password.autofill-extension 2>/dev/null | grep '^+' >/dev/null; then
+    ok '1Password fills passwords and passkeys'
+  else
+    bad '1Password is not an AutoFill source'
+    hint 'System Settings -> General -> AutoFill & Passwords -> AutoFill from: 1Password on'
+  fi
+  if [ "$(plutil -convert json -o - "$HOME/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist" 2>/dev/null |
+    jq -r 'first(.LSHandlers[]? | select(.LSHandlerURLScheme == "otpauth") | .LSHandlerRoleAll) // empty' 2>/dev/null)" = com.1password.1password ]; then
+    ok '1Password sets up verification codes'
+  else
+    bad '1Password does not set up verification codes'
+    hint 'System Settings -> General -> AutoFill & Passwords -> Set Up Codes In: 1Password'
+  fi
   if [ -S "$OP_AGENT_SOCK" ]; then ok '1Password SSH agent'; else
     bad '1Password SSH agent socket missing'
     hint '1Password -> Settings -> Developer -> Use the SSH agent'
@@ -243,6 +271,16 @@ doctor_identity() {
       fix chmod "$mode" "$path"
     fi
   done < <(vault_entries)
+  # Every GitHub App directory in identities.conf must be restorable on a new Mac.
+  local app_dir f
+  while read -r app_dir; do
+    for f in app-id app.pem; do
+      vault_entries | awk -v p="$app_dir/$f" '$2 == p { found = 1 } END { exit !found }' || {
+        bad "vault.list has no line for $app_dir/$f"
+        hint "add it to vault.list, then: dot vault push <title>"
+      }
+    done
+  done < <(sed -n 's/^[[:space:]]*app[[:space:]]*=[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*$/\1/p' "$HOME/.config/devbox/identities.conf" 2>/dev/null)
   local keys
   keys="$(grep -l 'PRIVATE KEY' "$HOME"/.ssh/* 2>/dev/null || true)"
   if [ -n "$keys" ]; then

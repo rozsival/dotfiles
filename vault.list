@@ -8,6 +8,8 @@
 devbox/identities.conf              ~/.config/devbox/identities.conf                    600
 devbox/secrets.env                  ~/.config/devbox/secrets.env                        600
 
+github-app/rozsival-agents/app-id        ~/.config/rozsival/rozsival-agents/app-id           600
+github-app/rozsival-agents/app.pem       ~/.config/rozsival/rozsival-agents/app.pem          600
 github-app/apitree-agents/app-id         ~/.config/apitree/apitree-agents/app-id             600
 github-app/apitree-agents/app.pem        ~/.config/apitree/apitree-agents/app.pem            600
 github-app/vitrozsivalcz-agents/app-id   ~/.config/vitrozsivalcz/vitrozsivalcz-agents/app-id 600

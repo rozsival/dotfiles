@@ -389,16 +389,68 @@ firewall_on() {
   record_write "$rc" "application firewall"
 }
 
+# keyboard_layouts <name>...: exactly these keyboard layouts are enabled, by the
+# "KeyboardLayout Name" macOS stores (Czech, ABC); the input source ID is
+# com.apple.keylayout.<name>. Input methods and the emoji palette stay as they
+# are. Writes go through the Text Input Sources API, not the plist:
+# TextInputMenuAgent owns com.apple.HIToolbox and rewrites it from memory.
+keyboard_layouts() {
+  local want have="" plist kind name i=0 rc=0
+  want=$(printf '%s\n' "$@" | sort | tr '\n' ' ')
+  TOTAL=$((TOTAL + 1))
+  plist=$(defaults export com.apple.HIToolbox - 2>/dev/null) || plist=""
+  while kind=$(printf '%s' "$plist" | plutil -extract "AppleEnabledInputSources.$i.InputSourceKind" raw -o - - 2>/dev/null); do
+    if [ "$kind" = "Keyboard Layout" ]; then
+      name=$(printf '%s' "$plist" | plutil -extract "AppleEnabledInputSources.$i.KeyboardLayout Name" raw -o - - 2>/dev/null) || name=""
+      [ -z "$name" ] || have="$have$name"$'\n'
+    fi
+    i=$((i + 1))
+  done
+  have=$(printf '%s' "$have" | sort | tr '\n' ' ')
+  [ "$have" != "$want" ] || return 0
+  [ -n "$have" ] || have="$UNSET "
+  handle_drift "keyboard layouts" string "${have% }" "${want% }" || return 0
+  # Enable first, then disable the rest, so one layout is always on.
+  swift -e 'import Carbon
+let want = Set(CommandLine.arguments.dropFirst().map { "com.apple.keylayout." + $0 })
+func sources(_ filter: [String: Any], all: Bool) -> [TISInputSource] {
+  (TISCreateInputSourceList(filter as CFDictionary, all)?.takeRetainedValue() as? [TISInputSource]) ?? []
+}
+func sourceID(_ s: TISInputSource) -> String {
+  Unmanaged<CFString>.fromOpaque(TISGetInputSourceProperty(s, kTISPropertyInputSourceID)).takeUnretainedValue() as String
+}
+var failed = false
+for id in want {
+  guard let s = sources([kTISPropertyInputSourceID as String: id], all: true).first else {
+    print("no input source \(id)")
+    failed = true
+    continue
+  }
+  if TISEnableInputSource(s) != noErr { failed = true }
+}
+for s in sources([kTISPropertyInputSourceType as String: kTISTypeKeyboardLayout as String], all: false) where !want.contains(sourceID(s)) {
+  if TISDisableInputSource(s) != noErr { failed = true }
+}
+exit(failed ? 1 : 0)' "$@" || rc=$?
+  record_write "$rc" "keyboard layouts"
+}
+
 ###############################################################################
 # General UI                                                                  #
 ###############################################################################
 section "General UI"
 
-# Medium sidebar icons.
+# Dark appearance; medium sidebar icons.
+pref NSGlobalDomain AppleInterfaceStyle string Dark
 pref NSGlobalDomain NSTableViewDefaultSizeMode int 2
 pref NSGlobalDomain AppleShowScrollBars string Automatic
 pref NSGlobalDomain NSUseAnimatedFocusRing bool false
 pref NSGlobalDomain NSWindowResizeTime float 0.001
+
+# Menu bar: background on (Menu Bar → Show menu bar background), clock with
+# seconds.
+pref NSGlobalDomain SLSMenuBarUseBlurredAppearance bool true
+pref com.apple.menuextra.clock ShowSeconds bool true
 
 # Expanded save/print panels; save to disk, not iCloud.
 pref NSGlobalDomain NSNavPanelExpandedStateForSaveMode bool true
@@ -440,6 +492,10 @@ pref NSGlobalDomain com.apple.mouse.tapBehavior int 1
 pref -h NSGlobalDomain com.apple.trackpad.trackpadCornerClickBehavior int 1
 pref -h NSGlobalDomain com.apple.trackpad.enableSecondaryClick bool true
 
+# Magic Mouse: right side is a secondary click.
+pref com.apple.AppleMultitouchMouse MouseButtonMode string TwoButton
+pref com.apple.driver.AppleBluetoothMultitouch.mouse MouseButtonMode string TwoButton
+
 # Natural scrolling.
 pref NSGlobalDomain com.apple.swipescrolldirection bool true
 
@@ -447,10 +503,22 @@ pref NSGlobalDomain com.apple.swipescrolldirection bool true
 # between every control).
 pref NSGlobalDomain AppleKeyboardUIMode int 2
 
-# Key repeat instead of the accent popup; fast repeat.
+# Key repeat instead of the accent popup; fast repeat. macOS 27 keeps the
+# rate in two places, NSGlobalDomain in 1/60 s ticks and com.apple.Accessibility
+# in seconds, so both are set. Takes effect at the next login.
 pref NSGlobalDomain ApplePressAndHoldEnabled bool false
 pref NSGlobalDomain KeyRepeat int 1
 pref NSGlobalDomain InitialKeyRepeat int 10
+pref com.apple.Accessibility KeyRepeatInterval float 0.01666667
+pref com.apple.Accessibility KeyRepeatDelay float 0.1666667
+
+# Czech and English (ABC) layouts, the input menu in the menu bar, 🌐 switches
+# between them. Ctrl+Space ("Select the previous input source") is off, free
+# for editors; Ctrl+Option+Space still cycles. Shortcuts apply at next login.
+keyboard_layouts Czech ABC
+pref com.apple.TextInputMenu visible bool true
+pref com.apple.HIToolbox AppleFnUsageType int 1
+pref_nested com.apple.symbolichotkeys AppleSymbolicHotKeys.60.enabled bool false
 
 # Input-source menu on the login window.
 pref -s /Library/Preferences/com.apple.loginwindow showInputMenu bool true

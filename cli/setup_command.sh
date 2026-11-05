@@ -20,6 +20,9 @@ step 'macOS defaults'
 
 step 'Automated part done'
 cat <<EOF
+    Log out and back in first: key repeat and keyboard shortcuts only take
+    effect at login.
+
     The rest needs you: 1Password, SSH keys on GitHub, Tailscale, logins, App Store.
     Open Ghostty (it starts the new login shell) and run:
 

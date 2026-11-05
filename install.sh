@@ -22,6 +22,12 @@ HOMEBREW_PREFIX=/opt/homebrew
   echo "install.sh: Apple Silicon only: paths assume $HOMEBREW_PREFIX" >&2
   exit 1
 }
+os=$(sw_vers -productVersion)
+[ "${os%%.*}" -ge 27 ] || {
+  echo "install.sh: macOS $os is too old: update to the latest macOS 27 first" >&2
+  echo '  System Settings -> General -> Software Update (Nastavení systému -> Obecné -> Aktualizace softwaru)' >&2
+  exit 1
+}
 
 if ! xcode-select -p >/dev/null 2>&1; then
   echo '==> Installing Xcode Command Line Tools: finish the dialog, this waits for it'

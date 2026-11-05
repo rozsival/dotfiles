@@ -4,7 +4,7 @@
 
 ### AI-first macOS setup for the laptop that drives [devbox](https://github.com/rozsival/devbox)
 
-![Platform](https://img.shields.io/badge/Platform-macOS%2026%2B%20%C2%B7%20Apple%20Silicon-0A84FF)
+![Platform](https://img.shields.io/badge/Platform-macOS%2027%2B%20%C2%B7%20Apple%20Silicon-0A84FF)
 ![Shell](https://img.shields.io/badge/Shell-Bash%205-4EAA25)
 ![Agents](https://img.shields.io/badge/Agents-OMP%20%2B%20Claude%20Code-F46800)
 ![Secrets](https://img.shields.io/badge/Secrets-1Password-3B66BC)
@@ -38,12 +38,15 @@ test for both.
 
 ## 🚀 Quick start
 
-**Requires** an Apple Silicon Mac on macOS 26+, an admin account, and the 1Password accounts that hold the SSH keys and
+**Requires** an Apple Silicon Mac on macOS 27+, an admin account, and the 1Password accounts that hold the SSH keys and
 the `Workstation` vault.
 
 ```bash
+# 0. Right after the first boot: install every macOS update and restart
+#    System Settings → General → Software Update (Nastavení systému → Obecné → Aktualizace softwaru)
+
 # 1. Automated: Xcode CLT, clone to ~/projects/rozsival/dotfiles, Homebrew + its bash, then `dot setup`
-#    (bash -c, not curl | bash: the installers it starts read the terminal)
+#    (bash -c, not curl | bash: the installers it starts read the terminal); log out and back in afterwards
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rozsival/dotfiles/main/install.sh)"
 
 # 2. Guided: open Ghostty (it starts the new login shell), sign the harness in to your subscription, then start it
@@ -54,6 +57,9 @@ bin/dot agent         # or: bin/dot agent claude
 # 3. Done when this passes
 bin/dot doctor
 ```
+
+The guided session speaks the language of the Mac's interface, English or Czech, and names each System Settings item as
+the screen shows it. It ends with a summary and the apps you still have to open yourself.
 
 `install.sh` waits once for the Xcode CLT dialog, and Homebrew's installer and `dot setup` ask for your password.
 `dot setup` is idempotent, but re-running one piece (`dot brew`, `dot link`, `dot macos`) is faster than running it all
@@ -165,8 +171,9 @@ their launcher points `GIT_CONFIG_GLOBAL` at the devbox agent config.
 ### macOS defaults
 
 [`macos/defaults.sh`](macos/defaults.sh) mirrors this Mac's settings plus a security baseline: quarantine and disk-image
-verification, hibernation and the firewall all on. Keys whose feature is gone in macOS 26/27 are dropped rather than
-kept just in case. Everything works with SIP enabled, and `dot macos --check` is read-only.
+verification, hibernation and the firewall all on. Keys whose feature is gone in macOS 27 are dropped rather than kept
+just in case. Everything works with SIP enabled, and `dot macos --check` is read-only. Keyboard layouts (Czech and ABC)
+are switched through the Text Input Sources API from a short `swift` script: TextInputMenuAgent owns their plist.
 
 ### Boundary with devbox
 
