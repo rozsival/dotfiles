@@ -15,4 +15,10 @@ window-save-state = always
 # (~/.local/state/ghostty/ssh_cache) so a reflashed box gets the TERM without
 # the terminfo - "Error opening terminal: xterm-ghostty". herdr panes already
 # run xterm-256color, so nothing changes there; COLORTERM keeps truecolor.
-shell-integration-features = ssh-env
+#
+# Locally xterm-ghostty lives only in Ghostty.app's terminfo, which the shell
+# finds via TERMINFO. sudo's env_reset drops it and neither /usr/share/terminfo
+# nor Homebrew's ncurses ships the entry, so `sudo nano` dies with "cannot
+# initialize terminal type". `sudo` wraps sudo as `sudo --preserve-env=TERMINFO`
+# (a shell function: covers sudo typed in a Ghostty shell, not scripts).
+shell-integration-features = ssh-env,sudo
