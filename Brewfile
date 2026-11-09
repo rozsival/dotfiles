@@ -124,6 +124,7 @@ cask "whatsapp"
 # Apps: utilities
 cask "appcleaner"
 cask "rectangle-pro"
+cask "macs-fan-control"
 cask "tailscale-app" # GUI app; the `tailscale` cask name is an alias for this
 cask "openvpn-connect"
 cask "winbox"
