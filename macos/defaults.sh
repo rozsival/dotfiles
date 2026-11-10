@@ -93,11 +93,15 @@ norm() { # type value
   esac
 }
 
-# Numbers compare numerically so 0.1 == 0.10 and 80 == 80.000000.
+# Numbers compare numerically so 0.1 == 0.10 and 80 == 80.000000. Floats match
+# within a relative 1e-6: macOS spells 1/60 as 0.01666667 or 0.016666666.
 same() { # type have want
   [ "$2" != "$UNSET" ] || return 1
   case "$1" in
-  int | float) awk -v a="$2" -v b="$3" 'BEGIN { exit !(a + 0 == b + 0) }' ;;
+  int) awk -v a="$2" -v b="$3" 'BEGIN { exit !(a + 0 == b + 0) }' ;;
+  float) awk -v a="$2" -v b="$3" 'function abs(x) { return x < 0 ? -x : x }
+    BEGIN { m = abs(a); if (abs(b) > m) m = abs(b); if (m < 1) m = 1
+      exit !(abs(a - b) <= 1e-6 * m) }' ;;
   *) [ "$2" = "$3" ] ;;
   esac
 }
@@ -505,12 +509,14 @@ pref NSGlobalDomain AppleKeyboardUIMode int 2
 
 # Key repeat instead of the accent popup; fast repeat. macOS 27 keeps the
 # rate in two places, NSGlobalDomain in 1/60 s ticks and com.apple.Accessibility
-# in seconds, so both are set. Takes effect at the next login.
+# in seconds, so both are set. Takes effect at the next login, which rewrites
+# the seconds from the ticks as ticks/60 cut to 9 decimals; the values below are
+# exactly that, so the login rewrite does not show up as drift.
 pref NSGlobalDomain ApplePressAndHoldEnabled bool false
 pref NSGlobalDomain KeyRepeat int 1
 pref NSGlobalDomain InitialKeyRepeat int 10
-pref com.apple.Accessibility KeyRepeatInterval float 0.01666667
-pref com.apple.Accessibility KeyRepeatDelay float 0.1666667
+pref com.apple.Accessibility KeyRepeatInterval float 0.016666666
+pref com.apple.Accessibility KeyRepeatDelay float 0.166666666
 
 # Czech and English (ABC) layouts, the input menu in the menu bar, 🌐 switches
 # between them. Ctrl+Space ("Select the previous input source") is off, free
