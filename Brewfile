@@ -110,8 +110,7 @@ brew "librsvg"
 
 # Apps: work
 cask "jetbrains-toolbox"
-cask "notion"
-cask "notion-calendar"
+cask "obsidian"
 cask "google-chrome"
 cask "google-drive"
 cask "zoom"
