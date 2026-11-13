@@ -1166,9 +1166,12 @@ doctor_agents() {
   # Docker Desktop at login races launchd's com.docker.socket to recreate
   # /var/run/docker.sock and asks for an admin password on every boot. Its
   # settings file is TCC-protected; the backend log of the last start is not.
+  # Older builds log "should enable default docker socket: X", newer ones
+  # "checking default docker socket enablement: X"; awk, unlike grep, exits 0
+  # on no match, so errexit doesn't end doctor before its summary and fixes.
   local dlog="$HOME/Library/Containers/com.docker.docker/Data/log/host/com.docker.backend.log" sock
   if [ -r "$dlog" ]; then
-    sock="$(grep -o 'should enable default docker socket: *[a-z]*' "$dlog" | tail -1 | awk '{print $NF}')"
+    sock="$(awk '/(should enable default docker socket|default docker socket enablement):/ { v = $NF } END { print v }' "$dlog")"
     if [ "$sock" = true ]; then
       warn 'Docker Desktop default socket on (admin prompt at every boot)'
       hint 'Docker Desktop -> Settings -> Advanced -> untick "Allow the default Docker socket to be used"'
