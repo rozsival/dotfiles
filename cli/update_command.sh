@@ -7,7 +7,9 @@ attempt brew upgrade --cask
 attempt brew bundle --file "$DOTFILES/Brewfile"
 chatgpt_unquarantine
 step mise
-attempt mise upgrade --yes
+# --global: from inside a project its pins shadow the global ones (this repo's
+# node = "26" hides the global 24), so a plain upgrade would skip them.
+attempt mise upgrade --global --yes
 step tenv
 attempt tenv --quiet tf use --force-remote --install latest-stable
 attempt tenv --quiet tofu use --force-remote --install latest-stable
