@@ -1030,7 +1030,7 @@ doctor_devbox() {
   # gitignored .push.env, so a new Mac starts without it.
   grep -q '^DEVBOX_HOST=.' "$DEVBOX_DIR/.push.env" 2>/dev/null && ok 'devbox .push.env names the workstation' || {
     bad "no DEVBOX_HOST in $(tilde "$DEVBOX_DIR")/.push.env"
-    hint "echo 'DEVBOX_HOST=panther-minor' >$(tilde "$DEVBOX_DIR")/.push.env"
+    hint "echo 'DEVBOX_HOST=pantheon' >$(tilde "$DEVBOX_DIR")/.push.env"
   }
   local cmd want got
   for cmd in omp claude codex; do
