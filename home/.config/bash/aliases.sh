@@ -18,8 +18,8 @@ alias lg='lazygit'
 alias reload='exec "$SHELL" -l'
 alias path='tr : "\n" <<<"$PATH"'
 
-alias panther-minor-sleep='ssh -f panther-minor "sudo systemctl suspend"'
-alias panther-minor-wake='ssh -f pi-zero "wakeonlan 9c:6b:00:c6:4e:0b"'
+alias pantheon-sleep='ssh -f pantheon "sudo systemctl suspend"'
+alias pantheon-wake='ssh -f pi-zero "wakeonlan 9c:6b:00:c6:4e:0b"'
 
 # Create a directory and enter it.
 mkd() { mkdir -p "$@" && cd "${@: -1}" || return; }

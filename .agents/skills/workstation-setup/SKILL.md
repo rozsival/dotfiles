@@ -114,14 +114,14 @@ signing key of each identity plus `Devbox Laptop`.
 cd ~/projects/rozsival/devbox                       # `dot setup` cloned it over HTTPS
 ./bin/devbox install                                # `devbox` on the PATH (~/.local/bin/devbox), bash completion
 ./bin/devbox agent install                          # launchers, gh shim, credential helper, devbox-identities
-echo 'DEVBOX_HOST=panther-minor' >.push.env         # workstation alias for `devbox deploy` and `doctor laptop`
+echo 'DEVBOX_HOST=pantheon' >.push.env              # workstation alias for `devbox deploy` and `doctor laptop`
 ```
 
 `agent install` installs the `omp`/`claude` launchers, `gh` shim, credential helper, `devbox-identities`,
 agent gitconfigs. The PATH line it prints is already in `~/.config/bash/env.sh` - nothing to add; open a
 new shell. Its other printed steps (identities.conf, tokens, App credentials) were covered by phase 2.
 `.push.env` is gitignored, so a new Mac never has it; without it `devbox deploy` needs the host as an
-argument and `devbox doctor laptop` silently skips its `Host panther-minor` check.
+argument and `devbox doctor laptop` silently skips its `Host pantheon` check.
 Verify: doctor's `omp -> devbox launcher`, `claude -> devbox launcher`; `command -v devbox` prints
 `~/.local/bin/devbox`.
 
@@ -136,7 +136,7 @@ identity, op-ssh-sign signing, `includeIf` per tree and per GitHub org), `~/.con
 `~/.ssh/config.d/identities` (GitHub `Host`/`Match … tagged` blocks), `~/.ssh/allowed_signers`, and the
 `id_<slug>.pub`/`signing_<slug>.pub` selectors. Shared git settings stay in `~/.config/git/config`
 (tracked); never put identity there. `~/.ssh/config` itself is tracked (`home/.ssh/config`, symlinked): it
-holds `Host *` with the 1Password socket, `panther-minor`/`pi-zero` (`id_personal.pub`) and `devbox`
+holds `Host *` with the 1Password socket, `pantheon`/`pi-zero` (`id_personal.pub`) and `devbox`
 (`devbox.pub`), and `Include`s the rendered GitHub blocks. Editing it edits this repo.
 
 `~/.ssh/devbox.pub` is not in the registry: take it from the agent -
@@ -162,14 +162,14 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 ## Phase 6 - Tailscale and the devbox
 
 1. The person opens Tailscale, logs in, approves the device. Verify: doctor's `Tailscale connected`,
-   `tailscale ping panther-minor` (CLI at `/Applications/Tailscale.app/Contents/MacOS/Tailscale`).
+   `tailscale ping pantheon` (CLI at `/Applications/Tailscale.app/Contents/MacOS/Tailscale`).
 2. `ssh devbox true` - the person accepts the host key and approves 1Password.
 3. The person runs `herdr machine add devbox --label Devbox` (interactive). Verify: `herdr machine list`.
 4. `cd ~/projects/rozsival/devbox && ./bin/devbox doctor laptop` - the end-to-end test for keys, tokens
    and connections. Its hints assume hand-written config; here the owners differ. An `id_*`/`signing_*`
    `.pub`, GitHub `Host`/`Match`, `~/.gitconfig`, `includeIf` or `allowed_signers` failure: fix
    `~/.config/devbox/identities.conf` if needed and re-run `bin/dot identities`, never hand-edit the
-   rendered files. A `Host devbox`/`Host panther-minor` failure: `home/.ssh/config` in this repo. Launchers,
+   rendered files. A `Host devbox`/`Host pantheon` failure: `home/.ssh/config` in this repo. Launchers,
    agent gitconfigs, tokens, App credentials: that repo's `devbox-laptop` skill.
 
 ## Phase 7 - agents and phone
