@@ -18,6 +18,7 @@ alias lg='lazygit'
 alias reload='exec "$SHELL" -l'
 alias path='tr : "\n" <<<"$PATH"'
 
+# Suspend / wake Pantheon, my home server (name only, not a product), via its Pi Zero controller.
 alias pantheon-sleep='ssh -f pantheon "sudo systemctl suspend"'
 alias pantheon-wake='ssh -f pi-zero "wakeonlan 9c:6b:00:c6:4e:0b"'
 
