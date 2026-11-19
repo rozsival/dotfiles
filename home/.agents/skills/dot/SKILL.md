@@ -54,7 +54,8 @@ person's: hand them the exact command, wait, then verify with the read-only form
   (`secrets.env`, `app.pem`, `.npmrc`, `models.yml`, `.env`). Existence and mode only: `dot vault status`,
   `ls -l`. `identities.conf` and `.pub` files are not secret.
 - Files under `home/` are live: `~/.bashrc` is a symlink, so editing it edits the repo. Machine-only shell
-  lines go in `~/.config/bash/local.sh` (untracked).
+  lines go in `~/.config/bash/local.sh` (untracked). `~/.bash_profile` is seeded, not linked, because
+  installers append to it; it must keep sourcing `~/.bashrc`.
 - Never hand-edit rendered identity files: change `~/.config/devbox/identities.conf`, then `dot identities`.
 - `dot sync` refuses uncommitted changes in the repo; never stash or reset them to get past it - show
   `git status` and let the person decide.

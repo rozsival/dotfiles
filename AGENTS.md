@@ -21,6 +21,7 @@ Brewfile, Brewfile.mas  packages / App Store apps
 home/                   symlinked file-by-file into ~ by `dot link`; home/.agents/skills/dot is the global
                         `dot` skill (home/.claude/skills/dot symlinks it for Claude Code)
 seed/                   copied into ~ only when absent (tool-owned afterwards)
+                        (.bash_profile is seeded, not linked: installers append to it)
 macos/defaults.sh       macOS defaults; --check is read-only drift detection
 vault.list              secret files kept as 1Password Documents (`dot vault`)
 setup/PROMPT.md         first message of the guided-setup session
