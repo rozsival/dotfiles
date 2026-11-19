@@ -46,6 +46,8 @@ link_home() {
     [ -e "$dst" ] && continue
     info "seed   ~/$rel"
     if [ "$dry" = 0 ]; then
+      # A link left from when the file lived in home/: cp would write through it.
+      [ -L "$dst" ] && rm "$dst"
       mkdir -p "$(dirname "$dst")"
       cp -p "$src" "$dst"
     fi

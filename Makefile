@@ -5,7 +5,7 @@ SHELL := /bin/bash
 
 FILES = git ls-files --cached --others --exclude-standard --deduplicate
 # Shell sources shfmt formats. bin/dot is bashly output: format cli/, then `make build`.
-SH_SRC := $(wildcard $(shell $(FILES) '*.sh' '*.bash' home/.bashrc home/.bash_profile))
+SH_SRC := $(wildcard $(shell $(FILES) '*.sh' '*.bash' home/.bashrc seed/.bash_profile))
 # cli/ partials have no shebang and only make sense assembled, so shellcheck lints bin/dot instead.
 SH_LINT := bin/dot $(filter-out cli/%,$(SH_SRC))
 # Run on a fresh Mac before Homebrew bash exists: must parse with bash 3.2 (AGENTS.md rule 1).
