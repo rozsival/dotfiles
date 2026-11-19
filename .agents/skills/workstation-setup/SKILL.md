@@ -121,7 +121,8 @@ echo 'DEVBOX_HOST=pantheon' >.push.env              # workstation alias for `dev
 agent gitconfigs. The PATH line it prints is already in `~/.config/bash/env.sh` - nothing to add; open a
 new shell. Its other printed steps (identities.conf, tokens, App credentials) were covered by phase 2.
 `.push.env` is gitignored, so a new Mac never has it; without it `devbox deploy` needs the host as an
-argument and `devbox doctor laptop` silently skips its `Host pantheon` check.
+argument and `devbox doctor laptop` silently skips its `Host pantheon` check. `pantheon` is the Tailnet
+hostname of the author's home server that hosts the devbox - a name only, not a product or service.
 Verify: doctor's `omp -> devbox launcher`, `claude -> devbox launcher`; `command -v devbox` prints
 `~/.local/bin/devbox`.
 
