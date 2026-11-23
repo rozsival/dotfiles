@@ -177,14 +177,15 @@ are switched through the Text Input Sources API from a short `swift` script: Tex
 
 ### Boundary with devbox
 
-devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities` and
-`~/.local/bin/devbox*`. This repo never writes there, except to restore `identities.conf` and `secrets.env` from
-1Password. It owns what devbox leaves to the laptop: `~/.ssh/config` and the 1Password SSH agent's vault list
-(`~/.config/1Password/ssh/agent.toml`), both tracked; the files `dot identities` renders
-(`~/.gitconfig`, `~/.config/git/identities/*`, `~/.ssh/config.d/identities`, the `id_*`/`signing_*.pub` selectors,
-`allowed_signers`) and the PATH line that puts the launchers first. devbox's laptop docs describe those files as
-hand-written; here they are not. The OMP preset is devbox's (`home/.omp/agent/config.yml`), the same file the devbox
-runs: `dot setup` copies it before OMP first starts, and `dot doctor` warns when the live file drifts from it.
+devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities`,
+`~/.local/bin/devbox*` and the other commands `devbox agent install` puts in `~/.local/bin` (such as `wt-herdr`). This
+repo never writes there, except to restore `identities.conf` and `secrets.env` from 1Password. It owns what devbox
+leaves to the laptop: `~/.ssh/config` and the 1Password SSH agent's vault list (`~/.config/1Password/ssh/agent.toml`),
+both tracked; the files `dot identities` renders (`~/.gitconfig`, `~/.config/git/identities/*`,
+`~/.ssh/config.d/identities`, the `id_*`/`signing_*.pub` selectors, `allowed_signers`) and the PATH line that puts the
+launchers first. devbox's laptop docs describe those files as hand-written; here they are not. The OMP preset is
+devbox's (`home/.omp/agent/config.yml`), the same file the devbox runs: `dot setup` copies it before OMP first starts,
+and `dot doctor` warns when the live file drifts from it.
 
 ## 📁 Repository layout
 
