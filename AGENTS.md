@@ -42,7 +42,8 @@ mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettie
    `_dot_cached` in `interactive.sh`. Startup budget: < 400 ms (`dot doctor` measures it).
 3. **Ownership boundaries.** Never manage `~/.config/devbox/**` (except restoring `identities.conf` and
    `secrets.env` via `vault.list`), `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities`,
-   `~/.local/bin/devbox*`, `~/.claude/settings.json` (moshi-hook and other tools rewrite its hooks).
+   `~/.local/bin/devbox*` and the other commands `devbox agent install` puts in `~/.local/bin` (such as `wt-herdr`),
+   `~/.claude/settings.json` (moshi-hook and other tools rewrite its hooks).
    `~/.omp/agent/config.yml` is devbox's `home/.omp/agent/config.yml`, the one preset this Mac and the devbox
    share: `dot setup` copies it when absent (before OMP first starts) and OMP owns the live file afterwards.
    Never copy it into this repo: a change goes into devbox's template, then `devbox sync omp` (`dot doctor`
