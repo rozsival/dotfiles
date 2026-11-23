@@ -1021,10 +1021,6 @@ doctor_devbox() {
       fix devbox agent install
     fi
   done
-  if have herdr && herdr machine list 2>/dev/null | awk -F'\t' '$3 == "devbox"' | grep . >/dev/null; then ok 'herdr machine devbox'; else
-    bad 'herdr has no devbox machine'
-    hint 'ssh devbox true && herdr machine add devbox --label Devbox'
-  fi
   info 'end-to-end keys, tokens and connections: ./bin/devbox doctor laptop (in the devbox repo)'
 }
 

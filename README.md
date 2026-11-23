@@ -102,7 +102,7 @@ secret's value.
 | 3   | devbox tooling     | `devbox install` and `devbox agent install`: `devbox` and the `omp`/`claude` launchers on the PATH, `gh` shim, `devbox-identities`, `.push.env` |
 | 4   | git & ssh identity | `dot identities` renders `~/.gitconfig`, SSH blocks and `allowed_signers`                                                                       |
 | 5   | GitHub             | `gh auth login`, SSH and signing checks, repos switched to SSH remotes                                                                          |
-| 6   | Tailscale & devbox | Tailnet login, `herdr machine add devbox`, `devbox doctor laptop`                                                                               |
+| 6   | Tailscale & devbox | Tailnet login, `devbox doctor laptop`                                                                                                           |
 | 7   | Agents & phone     | Login for the harness `dot agent` didn't start, Moshi pairing                                                                                   |
 | 8   | Apps               | `dot brew`, App Store apps via `dot brew --mas`, JetBrains IDEs, first-run approvals                                                            |
 | 9   | Cloud & registries | `gcloud`, `az`, `glab` logins, only for what you use                                                                                            |

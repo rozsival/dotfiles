@@ -9,6 +9,6 @@ Talk to me in the language of this Mac's interface (the skill's Language section
 and name every setting exactly as my screen shows it.
 
 I do everything that signs in, approves, or handles a secret: browser logins, 1Password, the App
-Store, `gh auth login`, `herdr machine add`, sudo prompts. Tell me exactly what to click or type,
+Store, `gh auth login`, sudo prompts. Tell me exactly what to click or type,
 wait until I confirm, then verify it yourself. Never print a secret's value or ask me to paste one
 into this chat.
