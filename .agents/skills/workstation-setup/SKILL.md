@@ -1,6 +1,6 @@
 ---
 name: workstation-setup
-description: Guides a person through the parts of setting up this Mac that a script cannot do - updating macOS, 1Password with its SSH agent and AutoFill, restoring secret files from 1Password (`dot vault pull`), devbox's laptop agent tooling, rendering git/ssh identity config (`dot identities`), GitHub login, Tailscale and the devbox connection (herdr, `devbox doctor laptop`), agent logins, Moshi pairing, App Store apps, JetBrains IDEs, cloud CLI logins, first app launches - driven by `bin/dot doctor` as the acceptance test, in English or Czech. Use when setting up a new or reinstalled Mac, when `dot doctor` fails, or when asked what is still missing on this machine.
+description: Guides a person through the parts of setting up this Mac that a script cannot do - updating macOS, 1Password with its SSH agent and AutoFill, restoring secret files from 1Password (`dot vault pull`), devbox's laptop agent tooling, rendering git/ssh identity config (`dot identities`), GitHub login, Tailscale and the devbox connection (`devbox doctor laptop`), agent logins, Moshi pairing, App Store apps, JetBrains IDEs, cloud CLI logins, first app launches - driven by `bin/dot doctor` as the acceptance test, in English or Czech. Use when setting up a new or reinstalled Mac, when `dot doctor` fails, or when asked what is still missing on this machine.
 ---
 
 # Workstation setup
@@ -24,7 +24,7 @@ lists a command's options.
 
 - **The person does**: anything in a browser or GUI, every sign-in, every approval (1Password, sudo/Touch
   ID, macOS permission dialogs), and any command that handles a credential (`gh auth login`,
-  `moshi-hook pair --token`, `herdr machine add`, `claude` `/login`). Also every `dot` command that can
+  `moshi-hook pair --token`, `claude` `/login`). Also every `dot` command that can
   prompt for sudo - `dot setup`, `dot brew`, `dot sync`, `dot update`, `dot macos` (apply): an agent shell has no
   terminal, so Homebrew steps that need sudo fail (dot sets `HOMEBREW_NO_SUDO` there) and dot's own sudo
   calls wait on a Touch ID prompt no one sees. Give the exact command or click path,
@@ -165,8 +165,7 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
 1. The person opens Tailscale, logs in, approves the device. Verify: doctor's `Tailscale connected`,
    `tailscale ping pantheon` (CLI at `/Applications/Tailscale.app/Contents/MacOS/Tailscale`).
 2. `ssh devbox true` - the person accepts the host key and approves 1Password.
-3. The person runs `herdr machine add devbox --label Devbox` (interactive). Verify: `herdr machine list`.
-4. `cd ~/projects/rozsival/devbox && ./bin/devbox doctor laptop` - the end-to-end test for keys, tokens
+3. `cd ~/projects/rozsival/devbox && ./bin/devbox doctor laptop` - the end-to-end test for keys, tokens
    and connections. Its hints assume hand-written config; here the owners differ. An `id_*`/`signing_*`
    `.pub`, GitHub `Host`/`Match`, `~/.gitconfig`, `includeIf` or `allowed_signers` failure: fix
    `~/.config/devbox/identities.conf` if needed and re-run `bin/dot identities`, never hand-edit the
