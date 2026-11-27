@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🍏 dotfiles
+# 🍏 Dotfiles
 
-### AI-first macOS setup for the laptop that drives [devbox](https://github.com/rozsival/devbox)
+### AI-first macOS setup for the laptop that drives [Devbox](https://github.com/rozsival/devbox)
 
 ![Platform](https://img.shields.io/badge/Platform-macOS%2027%2B%20%C2%B7%20Apple%20Silicon-0A84FF)
 ![Shell](https://img.shields.io/badge/Shell-Bash%205-4EAA25)
@@ -29,12 +29,12 @@ test for both.
 | **Acceptance test**      | `dot doctor` checks the whole machine, every ✗ comes with its fix, and `--fix` runs the ones dot can do itself |
 | **No private keys**      | SSH and commit signing go through the 1Password agent; `~/.ssh` holds only `.pub` key selectors                |
 | **Secrets in 1Password** | Credential files are kept as 1Password Documents and restored with `dot vault pull`                            |
-| **Rendered identities**  | `~/.gitconfig` and per-account SSH blocks come from devbox's `identities.conf`, never from git                 |
+| **Rendered identities**  | `~/.gitconfig` and per-account SSH blocks come from Devbox's `identities.conf`, never from git                 |
 | **Drift detection**      | `dot doctor` plus read-only `--check` modes for macOS defaults, Brewfiles and identities show what has moved   |
 
 > [!IMPORTANT]
 > This repo is public and holds no secrets. A file that contains a credential gets a line in [`vault.list`](vault.list)
-> and lives in 1Password; git identity is rendered from devbox's registry; no private key ever touches the disk.
+> and lives in 1Password; git identity is rendered from Devbox's registry; no private key ever touches the disk.
 
 ## 🚀 Quick start
 
@@ -81,7 +81,7 @@ flowchart LR
 ```
 
 **Automated** by `install.sh`: Xcode CLT → clone → Homebrew and its bash, which `bin/dot` runs on. Then by `dot setup`:
-the Xcode license (if Xcode is installed) → the [`Brewfile`](Brewfile) → Homebrew bash as the login shell → `dot link` → mise Node, rustup, and Terraform and OpenTofu via tenv → the devbox clone and
+the Xcode license (if Xcode is installed) → the [`Brewfile`](Brewfile) → Homebrew bash as the login shell → `dot link` → mise Node, rustup, and Terraform and OpenTofu via tenv → the Devbox clone and
 its OMP preset, OMP, Claude Code, agent skills and moshi-hook → Touch ID for sudo → macOS defaults.
 
 **Guided** by `dot agent`: the harness starts with [`setup/PROMPT.md`](setup/PROMPT.md) and the
@@ -99,10 +99,10 @@ secret's value.
 | --- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | 1Password          | Sign in, Touch ID on, SSH agent and CLI integration on                                                                                          |
 | 2   | Secret files       | `dot vault pull` restores every `vault.list` file with its mode                                                                                 |
-| 3   | devbox tooling     | `devbox install` and `devbox agent install`: `devbox` and the `omp`/`claude` launchers on the PATH, `gh` shim, `devbox-identities`, `.push.env` |
+| 3   | Devbox tooling     | `devbox install` and `devbox agent install`: `devbox` and the `omp`/`claude` launchers on the PATH, `gh` shim, `devbox-identities`, `.push.env` |
 | 4   | git & ssh identity | `dot identities` renders `~/.gitconfig`, SSH blocks and `allowed_signers`                                                                       |
 | 5   | GitHub             | `gh auth login`, SSH and signing checks, repos switched to SSH remotes                                                                          |
-| 6   | Tailscale & devbox | Tailnet login, `devbox doctor laptop`                                                                                                           |
+| 6   | Tailscale & Devbox | Tailnet login, `devbox doctor laptop`                                                                                                           |
 | 7   | Agents & phone     | Login for the harness `dot agent` didn't start, Moshi pairing                                                                                   |
 | 8   | Apps               | `dot brew`, App Store apps via `dot brew --mas`, JetBrains IDEs, first-run approvals                                                            |
 | 9   | Cloud & registries | `gcloud`, `az`, `glab` logins, only for what you use                                                                                            |
@@ -125,7 +125,7 @@ commands, options, allowed values and `vault.list` titles: the completion asks `
 | `dot link [--dry-run]`                    | Symlinks `home/` into `~`, backing up what it replaces; copies `seed/` where absent                                                                                                                                                                                                                                                |
 | `dot brew [--mas\|--check\|--cleanup]`    | `brew bundle` for `Brewfile` or `Brewfile.mas`; lists what is missing, or installed but undeclared. Clears Homebrew's quarantine on ChatGPT's Computer Use helper; offers to restart a stale herdr server                                                                                                                          |
 | `dot macos [--check]`                     | Applies macOS defaults, or reports drift without changing anything                                                                                                                                                                                                                                                                 |
-| `dot identities [--check]`                | Renders git and SSH identity config from devbox's `identities.conf`                                                                                                                                                                                                                                                                |
+| `dot identities [--check]`                | Renders git and SSH identity config from Devbox's `identities.conf`                                                                                                                                                                                                                                                                |
 | `dot scan-ports [ports\|none] [-p dir]`   | Sets the ports moshi-hook probes for dev servers to the union of what projects registered (`none` by default), or reports drift with `--check`                                                                                                                                                                                     |
 | `dot vault [status\|pull\|push] [title…]` | Syncs the files in `vault.list` with 1Password Documents (default: `status`)                                                                                                                                                                                                                                                       |
 
@@ -152,11 +152,11 @@ applies the defaults drift that `dot sync` reports.
 
 ### Shell
 
-Bash 5 from Homebrew, the same shell the devbox runs. Startup stays under 400 ms, and `dot doctor` measures it.
+Bash 5 from Homebrew, the same shell the Devbox runs. Startup stays under 400 ms, and `dot doctor` measures it.
 
 | File                                                 | Loaded by                                      | Role                                                                   |
 | ---------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| [`env.sh`](home/.config/bash/env.sh)                 | Every shell, including agents' non-interactive | PATH with the devbox launchers first, then mise shims; no subprocesses |
+| [`env.sh`](home/.config/bash/env.sh)                 | Every shell, including agents' non-interactive | PATH with the Devbox launchers first, then mise shims; no subprocesses |
 | [`interactive.sh`](home/.config/bash/interactive.sh) | Interactive shells                             | History, completion, starship prompt; slow `… init` output is cached   |
 | [`aliases.sh`](home/.config/bash/aliases.sh)         | Interactive shells                             | Only the aliases that history shows are in use                         |
 | `~/.config/bash/local.sh`                            | Interactive shells                             | Machine-only lines; untracked                                          |
@@ -164,9 +164,9 @@ Bash 5 from Homebrew, the same shell the devbox runs. Startup stays under 400 ms
 ### git
 
 Shared settings live in [`home/.config/git/config`](home/.config/git/config), which git reads as global from the XDG
-path. Identity, signing and the per-account `includeIf` chain live in the rendered `~/.gitconfig`, because devbox's
+path. Identity, signing and the per-account `includeIf` chain live in the rendered `~/.gitconfig`, because Devbox's
 `doctor laptop` reads them with `git config --global`, which does not follow `[include]`. Agent sessions see neither:
-their launcher points `GIT_CONFIG_GLOBAL` at the devbox agent config.
+their launcher points `GIT_CONFIG_GLOBAL` at the Devbox agent config.
 
 ### macOS defaults
 
@@ -175,16 +175,16 @@ verification, hibernation and the firewall all on. Keys whose feature is gone in
 just in case. Everything works with SIP enabled, and `dot macos --check` is read-only. Keyboard layouts (Czech and ABC)
 are switched through the Text Input Sources API from a short `swift` script: TextInputMenuAgent owns their plist.
 
-### Boundary with devbox
+### Boundary with Devbox
 
-devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities`,
+Devbox owns `~/.config/devbox/**`, `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities`,
 `~/.local/bin/devbox*` and the other commands `devbox agent install` puts in `~/.local/bin` (such as `wt-herdr`). This
-repo never writes there, except to restore `identities.conf` and `secrets.env` from 1Password. It owns what devbox
+repo never writes there, except to restore `identities.conf` and `secrets.env` from 1Password. It owns what Devbox
 leaves to the laptop: `~/.ssh/config` and the 1Password SSH agent's vault list (`~/.config/1Password/ssh/agent.toml`),
 both tracked; the files `dot identities` renders (`~/.gitconfig`, `~/.config/git/identities/*`,
 `~/.ssh/config.d/identities`, the `id_*`/`signing_*.pub` selectors, `allowed_signers`) and the PATH line that puts the
-launchers first. devbox's laptop docs describe those files as hand-written; here they are not. The OMP preset is
-devbox's (`home/.omp/agent/config.yml`), the same file the devbox runs: `dot setup` copies it before OMP first starts,
+launchers first. Devbox's laptop docs describe those files as hand-written; here they are not. The OMP preset is
+Devbox's (`home/.omp/agent/config.yml`), the same file the Devbox runs: `dot setup` copies it before OMP first starts,
 and `dot doctor` warns when the live file drifts from it.
 
 ## 📁 Repository layout
@@ -218,11 +218,17 @@ and `dot doctor` warns when the live file drifts from it.
 
 Rules for agents changing this repo live in [`AGENTS.md`](AGENTS.md).
 
+## 🧭 The stack
+
+This laptop drives [Devbox](https://github.com/rozsival/devbox), the agent container on Pantheon, the author's home
+server set up with the [Pantheon](https://github.com/rozsival/pantheon) baseline. The same machine runs the
+[Panther Minor](https://github.com/rozsival/panther-minor) AI stack, and [Janus](https://github.com/rozsival/janus)
+switches it on and off remotely. The whole map is in [Pantheon's README](https://github.com/rozsival/pantheon#-the-stack).
+
 ## 👤 Ownership
 
-| Item       | Details                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------- |
-| Maintainer | [@rozsival](https://github.com/rozsival) (see [`CODEOWNERS`](CODEOWNERS))                   |
-| Issues     | [GitHub Issues](https://github.com/rozsival/dotfiles/issues)                                |
-| Companion  | [devbox](https://github.com/rozsival/devbox), the remote agent container this laptop drives |
-| License    | [MIT](LICENSE)                                                                              |
+| Item       | Details                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| Maintainer | [@rozsival](https://github.com/rozsival) (see [`CODEOWNERS`](CODEOWNERS)) |
+| Issues     | [GitHub Issues](https://github.com/rozsival/dotfiles/issues)              |
+| License    | [MIT](LICENSE)                                                            |

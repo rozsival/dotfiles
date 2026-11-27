@@ -1,6 +1,6 @@
 ---
 name: workstation-setup
-description: Guides a person through the parts of setting up this Mac that a script cannot do - updating macOS, 1Password with its SSH agent and AutoFill, restoring secret files from 1Password (`dot vault pull`), devbox's laptop agent tooling, rendering git/ssh identity config (`dot identities`), GitHub login, Tailscale and the devbox connection (`devbox doctor laptop`), agent logins, Moshi pairing, App Store apps, JetBrains IDEs, cloud CLI logins, first app launches - driven by `bin/dot doctor` as the acceptance test, in English or Czech. Use when setting up a new or reinstalled Mac, when `dot doctor` fails, or when asked what is still missing on this machine.
+description: Guides a person through the parts of setting up this Mac that a script cannot do - updating macOS, 1Password with its SSH agent and AutoFill, restoring secret files from 1Password (`dot vault pull`), Devbox's laptop agent tooling, rendering git/ssh identity config (`dot identities`), GitHub login, Tailscale and the Devbox connection (`devbox doctor laptop`), agent logins, Moshi pairing, App Store apps, JetBrains IDEs, cloud CLI logins, first app launches - driven by `bin/dot doctor` as the acceptance test, in English or Czech. Use when setting up a new or reinstalled Mac, when `dot doctor` fails, or when asked what is still missing on this machine.
 ---
 
 # Workstation setup
@@ -13,7 +13,7 @@ start there: the person runs `bin/dot doctor --fix` in their own terminal (it ne
 agent shell), then take what remains.
 
 `install.sh` already installed Xcode CLT, Homebrew and Homebrew bash (`bin/dot` needs it), and `bin/dot
-setup` ran: Xcode license (if Xcode was installed), `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, Terraform and OpenTofu via tenv, the devbox clone
+setup` ran: Xcode license (if Xcode was installed), `Brewfile`, Homebrew bash as login shell, `dot link`, mise Node, rustup, Terraform and OpenTofu via tenv, the Devbox clone
 (HTTPS) and its OMP preset in `~/.omp/agent/config.yml`, OMP, Claude Code,
 agent-browser CLI, global skills, moshi-hook service + hooks, Touch ID for sudo, macOS defaults (including key
 repeat and the Czech + ABC keyboard layouts). Re-run a
@@ -105,10 +105,10 @@ signing key of each identity plus `Devbox Laptop`.
 - `neither` / `not in vault Workstation` on a first-ever run: those files exist only on the old Mac.
   There, `dot vault push` uploads them (creates the vault if needed). A secret that is truly gone (a
   rotated PAT, a lost App key) is re-issued on GitHub, then saved with `dot vault push <title>`.
-- Restores `identities.conf` and `secrets.env` into `~/.config/devbox/` before devbox's installer runs,
+- Restores `identities.conf` and `secrets.env` into `~/.config/devbox/` before Devbox's installer runs,
   which then keeps them (it never overwrites either).
 
-## Phase 3 - devbox laptop tooling
+## Phase 3 - Devbox laptop tooling
 
 ```bash
 cd ~/projects/rozsival/devbox                       # `dot setup` cloned it over HTTPS
@@ -122,7 +122,7 @@ agent gitconfigs. The PATH line it prints is already in `~/.config/bash/env.sh` 
 new shell. Its other printed steps (identities.conf, tokens, App credentials) were covered by phase 2.
 `.push.env` is gitignored, so a new Mac never has it; without it `devbox deploy` needs the host as an
 argument and `devbox doctor laptop` silently skips its `Host pantheon` check. `pantheon` is the Tailnet
-hostname of the author's home server that hosts the devbox - a name only, not a product or service.
+hostname of the author's home server that hosts Devbox, set up with the Pantheon baseline (rozsival/pantheon).
 Verify: doctor's `omp -> devbox launcher`, `claude -> devbox launcher`; `command -v devbox` prints
 `~/.local/bin/devbox`.
 
@@ -132,7 +132,7 @@ Verify: doctor's `omp -> devbox launcher`, `claude -> devbox launcher`; `command
 bin/dot identities
 ```
 
-Renders from `~/.config/devbox/identities.conf`, with devbox's own renderer: `~/.gitconfig` (default
+Renders from `~/.config/devbox/identities.conf`, with Devbox's own renderer: `~/.gitconfig` (default
 identity, op-ssh-sign signing, `includeIf` per tree and per GitHub org), `~/.config/git/identities/*`,
 `~/.ssh/config.d/identities` (GitHub `Host`/`Match … tagged` blocks), `~/.ssh/allowed_signers`, and the
 `id_<slug>.pub`/`signing_<slug>.pub` selectors. Shared git settings stay in `~/.config/git/config`
@@ -155,12 +155,12 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
    are already registered on GitHub. Only a brand-new key needs
    `gh ssh-key add ~/.ssh/<file>.pub --type authentication` and, for signing keys, `--type signing` (on the
    right account).
-3. Switch this repo and devbox to SSH remotes now that pushing works:
+3. Switch this repo and Devbox to SSH remotes now that pushing works:
    `git -C <repo> remote set-url origin git@github.com:rozsival/<repo>.git`.
 4. Signing check: an empty commit in a scratch repo shows `Good "git" signature` in
    `git log --show-signature -1`.
 
-## Phase 6 - Tailscale and the devbox
+## Phase 6 - Tailscale and the Devbox
 
 1. The person opens Tailscale, logs in, approves the device. Verify: doctor's `Tailscale connected`,
    `tailscale ping pantheon` (CLI at `/Applications/Tailscale.app/Contents/MacOS/Tailscale`).
@@ -183,8 +183,8 @@ Verify: doctor's identity lines; `git -C ~/projects/rozsival/dotfiles config use
   `moshi-hook status` shows `status: paired`; `moshi-hook doctor`. If pairing's first-run prompt turned
   server discovery back to every port, doctor flags `moshi-hook scan-ports`: `dot scan-ports` restores it
   (probing every port answers login callbacks such as `gcloud auth login` before the tool does).
-- A phone reaching the devbox directly needs its key in `DEVBOX_EXTRA_AUTHORIZED_KEYS` on the
-  workstation (devbox `docs/connecting.md`), not on this Mac.
+- A phone reaching the Devbox directly needs its key in `DEVBOX_EXTRA_AUTHORIZED_KEYS` on the
+  workstation (Devbox `docs/connecting.md`), not on this Mac.
 
 ## Phase 8 - apps
 

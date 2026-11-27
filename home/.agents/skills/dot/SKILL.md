@@ -28,7 +28,7 @@ person's: hand them the exact command, wait, then verify with the read-only form
 | Command                        | Changes                                                                                                                                                                                                                                                                     | Who                                              |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | `dot doctor`                   | nothing (fetches origin); exit 1 while any `✗`                                                                                                                                                                                                                              | agent                                            |
-| `dot doctor --fix`             | after the report, lists the fixes dot can run itself (Xcode license, Brewfile, links, shell, defaults, Touch ID, vault files, identities, devbox launchers, runtimes, agents and skills), asks, runs them, checks again                                                     | person (refuses without a terminal)              |
+| `dot doctor --fix`             | after the report, lists the fixes dot can run itself (Xcode license, Brewfile, links, shell, defaults, Touch ID, vault files, identities, Devbox launchers, runtimes, agents and skills), asks, runs them, checks again                                                     | person (refuses without a terminal)              |
 | `dot link --dry-run`           | nothing                                                                                                                                                                                                                                                                     | agent                                            |
 | `dot link`                     | symlinks `home/` into `~`, copies absent `seed/` files, moves replaced files to `~/.dotfiles-backup/<time>/`, removes links whose source left `home/`                                                                                                                       | agent, after showing the dry run                 |
 | `dot brew --check`             | nothing; lists what `Brewfile`/`Brewfile.mas` lack                                                                                                                                                                                                                          | agent                                            |
@@ -59,7 +59,7 @@ person's: hand them the exact command, wait, then verify with the read-only form
 - Never hand-edit rendered identity files: change `~/.config/devbox/identities.conf`, then `dot identities`.
 - `dot sync` refuses uncommitted changes in the repo; never stash or reset them to get past it - show
   `git status` and let the person decide.
-- In a devbox launcher session `git config --global` is the agent's config; read the person's with
+- In a Devbox launcher session `git config --global` is the agent's config; read the person's with
   `git config --file ~/.gitconfig`.
 
 ## Recipes
