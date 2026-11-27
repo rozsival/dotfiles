@@ -4,11 +4,11 @@ Guidance for AI agents working in this repository.
 
 ## What this is
 
-macOS dotfiles for an AI-first workstation (Apple Silicon, macOS 27+). `install.sh` → `bin/dot setup`
+Dotfiles is the macOS setup of an AI-first workstation (Apple Silicon, macOS 27+). `install.sh` → `bin/dot setup`
 automates everything a script can; `bin/dot agent` starts a harness with `setup/PROMPT.md` and the
 `workstation-setup` skill for the human-in-the-loop rest; `bin/dot doctor` is the acceptance test for
-both. The laptop drives [devbox](https://github.com/rozsival/devbox) (remote agent container) and runs
-OMP / Claude Code locally through devbox's launchers.
+both. The laptop drives [Devbox](https://github.com/rozsival/devbox) (remote agent container) and runs
+OMP / Claude Code locally through Devbox's launchers.
 
 ## Layout
 
@@ -44,12 +44,12 @@ mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettie
    `secrets.env` via `vault.list`), `~/.local/libexec/devbox-agent/**`, `~/.local/libexec/devbox-identities`,
    `~/.local/bin/devbox*` and the other commands `devbox agent install` puts in `~/.local/bin` (such as `wt-herdr`),
    `~/.claude/settings.json` (moshi-hook and other tools rewrite its hooks).
-   `~/.omp/agent/config.yml` is devbox's `home/.omp/agent/config.yml`, the one preset this Mac and the devbox
+   `~/.omp/agent/config.yml` is Devbox's `home/.omp/agent/config.yml`, the one preset this Mac and the Devbox
    share: `dot setup` copies it when absent (before OMP first starts) and OMP owns the live file afterwards.
-   Never copy it into this repo: a change goes into devbox's template, then `devbox sync omp` (`dot doctor`
+   Never copy it into this repo: a change goes into Devbox's template, then `devbox sync omp` (`dot doctor`
    compares the live file with the template).
 4. **Identity is rendered, not tracked.** `user.*`, `gpg.*`, `commit/tag.gpgsign` and `includeIf` live in
-   the `~/.gitconfig` that `dot identities` renders from `~/.config/devbox/identities.conf` via devbox's
+   the `~/.gitconfig` that `dot identities` renders from `~/.config/devbox/identities.conf` via Devbox's
    own library. Never put them in `home/.config/git/config`: `devbox doctor laptop` reads
    `git config --global` without `--includes`.
 5. **No secrets in git.** A file holding a credential gets a `vault.list` line, never a `home/` or `seed/`
@@ -82,7 +82,7 @@ mise.toml, .editorconfig  prettier pin (via `mise exec`); repo style for prettie
 
 ## Working in an agent session
 
-Sessions started through the devbox launchers export `GIT_CONFIG_GLOBAL` (the agent gitconfig) and a `gh`
+Sessions started through the Devbox launchers export `GIT_CONFIG_GLOBAL` (the agent gitconfig) and a `gh`
 shim, and OMP's guardrails deny unsetting them. To inspect the human config use
 `git config --file ~/.gitconfig …` or `git config --file ~/.gitconfig --includes …` from inside a repo,
 not `git config --global`.
